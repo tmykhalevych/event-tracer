@@ -11,6 +11,7 @@ namespace event_tracer
 
 /// @brief Event registry collection
 /// @tparam ED Event descriptor concrete type
+/// @warning Not MT-safe
 template<typename ED>
 class EventRegistry
 {
@@ -64,19 +65,17 @@ EventRegistry<ED>::EventRegistry(size_t capacity)
 template<typename ED>
 EventRegistry<ED>::~EventRegistry()
 {
-    if (m_heap_allocated)
-        delete [] m_begin;
+    if (m_begin != m_next && m_ready_cb) m_ready_cb(*this);
+    if (m_heap_allocated) delete [] m_begin;
 }
 
 template<typename ED>
 void EventRegistry<ED>::add(event_desc_t event)
 {
-    if (!m_first_ts)
-    {
+    if (!m_first_ts) {
         m_first_ts = static_cast<uint64_t>(event.ts);
     }
-    else if (*m_first_ts > event.ts)
-    {
+    else if (*m_first_ts > event.ts) {
         // do not register events from the past, if we set start timestamp
         return;
     }
@@ -85,11 +84,8 @@ void EventRegistry<ED>::add(event_desc_t event)
     *m_next = event;
     ++m_next;
 
-    if (m_next >= m_begin + m_capacity)
-    {
-        if (m_ready_cb)
-            m_ready_cb(*this);
-
+    if (m_next >= m_begin + m_capacity) {
+        if (m_ready_cb) m_ready_cb(*this);
         reset();
     }
 }
