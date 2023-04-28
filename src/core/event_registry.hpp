@@ -1,6 +1,7 @@
 #pragma once
 
 #include <event_desc.hpp>
+#include <assert.hpp>
 
 #include <cstdint>
 #include <optional>
@@ -52,7 +53,9 @@ EventRegistry<ED>::EventRegistry(event_desc_t* buff, size_t capacity)
     , m_heap_allocated(false)
     , m_begin(buff)
     , m_next(m_begin)
-{}
+{
+    assert(buff);
+}
 
 template<typename ED>
 EventRegistry<ED>::EventRegistry(size_t capacity)
