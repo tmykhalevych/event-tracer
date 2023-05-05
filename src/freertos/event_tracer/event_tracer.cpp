@@ -1,5 +1,6 @@
 #include <event_tracer.hpp>
 #include <assert.hpp>
+#include <error.hpp>
 
 namespace event_tracer::freertos
 {
@@ -47,7 +48,12 @@ void EventTracer::notify_done(EventRegistry &registry)
 
 void EventTracer::on_registry_ready(EventRegistry &registry)
 {
-    assert(m_pending_registry->empty());
+    if (!m_pending_registry->empty()) {
+        error("Pending registry is not empty, dropping active registry");
+        m_active_registry->reset();
+        return;
+    }
+
     std::swap(m_active_registry, m_pending_registry);
     m_data_ready_cb(*m_pending_registry, [this, &registry = *m_pending_registry]{ notify_done(registry); });
 }

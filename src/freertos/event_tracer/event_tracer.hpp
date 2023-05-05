@@ -48,7 +48,7 @@ private:
 
 /// @brief Short alias to access global event tracer
 /// @return Reference to event tracer single instance
-inline EventTracer& global_tracer()
+[[nodiscard]] inline EventTracer& tracer()
 {
     return EventTracer::get_single_instance();
 }

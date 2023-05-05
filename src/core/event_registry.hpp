@@ -2,6 +2,7 @@
 
 #include <event_desc.hpp>
 #include <assert.hpp>
+#include <error.hpp>
 
 #include <cstdint>
 #include <optional>
@@ -86,7 +87,10 @@ void EventRegistry<ED>::add(event_desc_t event)
     }
 
     const event_desc_t* end = m_begin + m_capacity;
-    assert(m_next < end);
+    if (m_next == end) {
+        error("Buffer full, please reset before use");
+        return;
+    }
 
     event.ts -= *m_first_ts;
     *m_next = event;
