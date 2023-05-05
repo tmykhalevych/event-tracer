@@ -27,10 +27,12 @@ public:
     ~EventRegistry();
 
     void add(event_desc_t event);
-    void reset();
+    void reset(bool hard = false);
 
     const event_desc_t* begin() const { return m_begin; }
     const event_desc_t* end() const { return m_next; }
+
+    [[nodiscard]] bool empty() const { return m_next == m_begin; }
 
     template<typename F>
     void set_ready_cb(F handler) { m_ready_cb = handler; }
@@ -68,7 +70,7 @@ EventRegistry<ED>::EventRegistry(size_t capacity)
 template<typename ED>
 EventRegistry<ED>::~EventRegistry()
 {
-    if (m_begin != m_next && m_ready_cb) m_ready_cb(*this);
+    if (!empty() && m_ready_cb) m_ready_cb(*this);
     if (m_heap_allocated) delete [] m_begin;
 }
 
@@ -83,21 +85,21 @@ void EventRegistry<ED>::add(event_desc_t event)
         return;
     }
 
+    const event_desc_t* end = m_begin + m_capacity;
+    assert(m_next < end);
+
     event.ts -= *m_first_ts;
     *m_next = event;
     ++m_next;
 
-    if (m_next >= m_begin + m_capacity) {
-        if (m_ready_cb) m_ready_cb(*this);
-        reset();
-    }
+    if (m_next == end && m_ready_cb) m_ready_cb(*this);
 }
 
 template<typename ED>
-void EventRegistry<ED>::reset()
+void EventRegistry<ED>::reset(bool hard)
 {
     m_next = m_begin;
-    m_first_ts.reset();
+    if (hard) m_first_ts.reset();
 }
 
 } // namespace event_tracer

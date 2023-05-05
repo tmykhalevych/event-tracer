@@ -1,2 +1,2 @@
 add_example(basic main.cpp)
-target_link_libraries(basic PRIVATE event-registry)
+target_link_libraries(basic PRIVATE event-tracer-core)
