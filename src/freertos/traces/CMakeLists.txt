@@ -1,2 +1,2 @@
-add_library(freertos-traces INTERFACE)
-target_include_directories(freertos-traces INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(freertos-traces SHARED traces.cpp)
+target_include_directories(freertos-traces PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -1,3 +1,5 @@
+#include <traces.h>
+
 #include <FreeRTOS.h>
 #include <task.h>
 
@@ -15,8 +17,13 @@ static constexpr std::pair<int, int> TASK_SLEEP_RANGE_MS = {100, 500};
 static constexpr auto TASK_NUM = 5;
 static constexpr auto TASK_NAME_BASE = "task #";
 
+static constexpr auto TRACES_BUFF_LEN = 2000; // events capacity
+static uint8_t TRACES_BUFF[TRACES_BUFF_LEN * sizeof(uint64_t)];
+
 int main()
 {
+    vTracesInit(TRACES_BUFF, TRACES_BUFF_LEN);
+
     const auto task = [](void*) {
         std::random_device dev;
         std::mt19937 rng(dev());
