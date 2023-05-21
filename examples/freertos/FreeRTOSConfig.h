@@ -46,7 +46,7 @@
 #define configMINIMAL_STACK_SIZE                   ( ( unsigned short ) PTHREAD_STACK_MIN ) /* The stack size being passed is equal to the minimum stack size needed by pthread_create(). */
 #define configTOTAL_HEAP_SIZE                      ( ( size_t ) ( 65 * 1024 ) )
 #define configMAX_TASK_NAME_LEN                    ( 12 )
-#define configUSE_TRACE_FACILITY                   0
+#define configUSE_TRACE_FACILITY                   1
 #define configUSE_16_BIT_TICKS                     0
 #define configIDLE_SHOULD_YIELD                    0
 #define configUSE_MUTEXES                          1
@@ -172,3 +172,5 @@ extern void vLoggingPrintf( const char * pcFormatString,
     #define FreeRTOS_printf( X )    vLoggingPrintf X
 #endif
 #endif /* FREERTOS_CONFIG_H */
+
+#include <traces.h>

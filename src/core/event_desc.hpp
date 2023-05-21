@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <type_traits>
 
 namespace event_tracer
 {
@@ -12,12 +13,23 @@ struct EventDesc
 {
     static_assert(sizeof(CT) <= 2, "Context should be packed into 2 bytes");
 
+    using timestamp_type = uint64_t;
     using context_type = CT;
     using id_type = uint8_t;
 
-    uint64_t ts : 40;
+    timestamp_type ts : 40;
     id_type id;
     context_type ctx;
 };
+
+/// @brief Helper to cast event type to underlying type
+/// @tparam E Event type, user defined
+/// @param e Event
+/// @return Event casted to underlying type
+template <typename E>
+constexpr auto to_underlying(E e) noexcept
+{
+    return static_cast<std::underlying_type_t<E>>(e);
+}
 
 } // namespace event_tracer

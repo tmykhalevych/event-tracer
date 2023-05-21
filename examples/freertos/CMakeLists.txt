@@ -5,7 +5,8 @@ set(FREERTOS_PORT GCC_POSIX)
 find_package(FreeRTOS REQUIRED)
 find_package(Threads REQUIRED)
 
-add_example(freertos main.cpp)
+target_link_libraries(freertos_kernel freertos-traces)
+target_compile_definitions(freertos_kernel PUBLIC USE_ALLOCATOR_TRACES)
 
-target_compile_definitions(freertos PUBLIC USE_ALLOCATOR_TRACES)
-target_link_libraries(freertos PRIVATE freertos-traces freertos_kernel ${CMAKE_THREAD_LIBS_INIT})
+add_example(freertos main.cpp)
+target_link_libraries(freertos PRIVATE freertos_kernel ${CMAKE_THREAD_LIBS_INIT})

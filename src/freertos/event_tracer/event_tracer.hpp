@@ -5,6 +5,7 @@
 #include <functional>
 
 #include <event_registry.hpp>
+#include <event.hpp>
 
 namespace event_tracer::freertos
 {
@@ -25,13 +26,17 @@ class EventTracer
 public:
     using data_done_cb_t = std::function<void()>;
     using data_ready_cb_t = std::function<void(EventRegistry&, data_done_cb_t)>;
+    using get_time_cb_t = std::function<EventDesc::timestamp_type()>;
 
     EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb);
 
-    static void set_single_instance(EventTracer &tracer);
+    static void set_single_instance(EventTracer *tracer);
     [[nodiscard]] static EventTracer& get_single_instance();
 
-    void register_event(EventDesc &&event);
+    void set_time_getter(get_time_cb_t cb) { m_get_time_cb = cb; }
+
+    void register_event(EventDesc desc);
+    void register_event(Event event);
 
 private:
     void on_registry_ready(EventRegistry &registry);
@@ -42,6 +47,7 @@ private:
 
     std::array<std::optional<EventRegistry>, 2> m_registries;
     data_ready_cb_t m_data_ready_cb;
+    get_time_cb_t m_get_time_cb;
 
     static EventTracer* m_single_instance;
 };

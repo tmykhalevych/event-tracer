@@ -6,7 +6,7 @@ namespace event_tracer::freertos
 {
 
 /// @brief FreeRTOS tracing events enumeration
-enum class Event : EventDesc<>::id_type
+enum class Event : event_tracer::EventDesc<>::id_type
 {
     UNDEFINED = 0,
     // task events
@@ -101,6 +101,6 @@ enum class Event : EventDesc<>::id_type
     EVENT_GROUP_SET_BITS_FROM_ISR,
     EVENT_GROUP_SYNC_BLOCK,
     EVENT_GROUP_WAIT_BITS_BLOCK
-}
+};
 
 } // namespace event_trecer::freertos
