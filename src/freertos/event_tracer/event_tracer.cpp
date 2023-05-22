@@ -38,6 +38,12 @@ EventTracer& EventTracer::get_single_instance()
     return *m_single_instance;
 }
 
+EventDesc::timestamp_type EventTracer::now() const
+{
+    assert(m_get_time_cb);
+    return m_get_time_cb();
+}
+
 void EventTracer::register_event(EventDesc desc)
 {
     m_active_registry->add(std::move(desc));
@@ -45,16 +51,24 @@ void EventTracer::register_event(EventDesc desc)
 
 void EventTracer::register_event(Event event)
 {
-    assert(m_get_time_cb);
-    const auto timestamp = m_get_time_cb();
+    const auto timestamp = now();
     const auto tcb = xTaskGetCurrentTaskHandle();
+    EventContext ctx = GLOBAL_CONTEXT;
+
+    /// @todo consider handling "inside ISR" case
+    if (tcb) {
+        TaskStatus_t info;
+        vTaskGetInfo(tcb, &info, pdFALSE, eInvalid);
+        ctx = {
+            .id = static_cast<uint8_t>(info.xTaskNumber),
+            .prio = static_cast<uint8_t>(info.uxCurrentPriority)
+        };
+    }
+
     register_event({
         .ts = timestamp,
         .id = to_underlying(event),
-        .ctx = {
-            .id = static_cast<uint8_t>(uxTaskGetTaskNumber(tcb)),
-            .prio = static_cast<uint8_t>(uxTaskPriorityGet(tcb))
-        }
+        .ctx = std::move(ctx)
     });
 }
 

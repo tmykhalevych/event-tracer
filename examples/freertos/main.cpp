@@ -7,13 +7,13 @@
 #include <utility>
 #include <chrono>
 
-static constexpr auto MAX_TASK_PRIORITY = configTIMER_TASK_PRIORITY - 1;
-static constexpr auto MIN_TASK_STACK_SIZE = configMINIMAL_STACK_SIZE;
+static constexpr auto MAX_TASK_PRIORITY = configTIMER_TASK_PRIORITY - 2;
+static const auto MIN_TASK_STACK_SIZE = configMINIMAL_STACK_SIZE;
 static constexpr std::pair<int, int> TASK_SLEEP_RANGE_MS = {100, 500};
 static constexpr auto TASK_NUM = 5;
 static constexpr auto TASK_NAME_BASE = "task #";
 
-static constexpr auto TRACES_BUFF_LEN = 20 * sizeof(uint64_t);
+static constexpr auto TRACES_BUFF_LEN = 200 * sizeof(uint64_t);
 static uint8_t TRACES_BUFF[TRACES_BUFF_LEN];
 
 int main()

@@ -9,14 +9,6 @@
 #include <string_view>
 #include <sstream>
 
-namespace
-{
-
-/// @brief The size for the data traces queue, 2 is minimal value, that should be enough
-static constexpr auto DATA_REGISTRY_QUEUE_SIZE = 2;
-
-} // namespace
-
 extern "C" void vTracesInit(uint8_t *puBuff,
                             size_t uxCapasity,
                             uxGetTime *pfnGetSteadyTimestamp,
@@ -43,6 +35,8 @@ extern "C" void vTracesInit(uint8_t *puBuff,
         EventTracer::data_done_cb_t done_cb;
     };
 
+    /// the size for the data traces queue, 2 is minimal value, that should be enough
+    static constexpr auto DATA_REGISTRY_QUEUE_SIZE = 2;
     // the queue is instanciated after evebt tracer to prevent traces when tracer is not ready
     static QueueHandle_t data_ready_queue = nullptr;
 
@@ -59,13 +53,16 @@ extern "C" void vTracesInit(uint8_t *puBuff,
                 assert(msg.registry);
                 for (const auto& event : *msg.registry) {
                     std::ostringstream oss;
-                    oss << "Event [ts:" << event.ts << ", id:" << event.id << ", task(id:" << event.ctx.id << ", prio: " << event.ctx.prio << ")]";
+                    oss << "Event [ts:" << std::to_string(event.ts)
+                        << ", id:" << std::to_string(event.id)
+                        << ", task(id:" << std::to_string(event.ctx.id)
+                        << ", prio: " << std::to_string(event.ctx.prio)
+                        << ")]\n";
                     callbacks.data_cb(oss.str().c_str());
                 }
                 // notify event tracer that we're done handling the data
                 msg.done_cb();
             }
-            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         }
     };
 
@@ -78,7 +75,7 @@ extern "C" void vTracesInit(uint8_t *puBuff,
             .done_cb = done_cb
         };
 
-        if (xQueueSend(data_ready_queue, &msg, 0 /* don't wait */) == pdPASS) {
+        if (xQueueSend(data_ready_queue, &msg, 0 /* don't wait */) != pdPASS) {
             error("Failed to send tracing data");
         }
     };

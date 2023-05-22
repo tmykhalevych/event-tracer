@@ -3,6 +3,7 @@
 #include <array>
 #include <optional>
 #include <functional>
+#include <limits>
 
 #include <event_registry.hpp>
 #include <event.hpp>
@@ -15,6 +16,18 @@ struct EventContext
 {
     uint8_t id;
     uint8_t prio;
+};
+
+/// @brief Global context constant
+static constexpr EventContext GLOBAL_CONTEXT {
+    .id = std::numeric_limits<uint8_t>::min(),
+    .prio = std::numeric_limits<uint8_t>::min()
+};
+
+/// @brief ISR context constant
+static constexpr EventContext ISR_CONTEXT {
+    .id = std::numeric_limits<uint8_t>::max(),
+    .prio = std::numeric_limits<uint8_t>::max()
 };
 
 using EventDesc = event_tracer::EventDesc<EventContext>;
@@ -34,6 +47,7 @@ public:
     [[nodiscard]] static EventTracer& get_single_instance();
 
     void set_time_getter(get_time_cb_t cb) { m_get_time_cb = cb; }
+    [[nodiscard]] EventDesc::timestamp_type now() const;
 
     void register_event(EventDesc desc);
     void register_event(Event event);
