@@ -7,7 +7,6 @@
 #include <queue.h>
 
 #include <string_view>
-#include <sstream>
 
 extern "C" void vTracesInit(uint8_t *puBuff,
                             size_t uxCapasity,
@@ -52,13 +51,7 @@ extern "C" void vTracesInit(uint8_t *puBuff,
             if (xQueueReceive(data_ready_queue, &msg, portMAX_DELAY)) {
                 assert(msg.registry);
                 for (const auto& event : *msg.registry) {
-                    std::ostringstream oss;
-                    oss << "Event [ts:" << std::to_string(event.ts)
-                        << ", id:" << std::to_string(event.id)
-                        << ", task(id:" << std::to_string(event.ctx.id)
-                        << ", prio: " << std::to_string(event.ctx.prio)
-                        << ")]\n";
-                    callbacks.data_cb(oss.str().c_str());
+                    callbacks.data_cb(format(event));
                 }
                 // notify event tracer that we're done handling the data
                 msg.done_cb();

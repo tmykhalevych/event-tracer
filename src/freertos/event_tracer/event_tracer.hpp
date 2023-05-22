@@ -4,6 +4,9 @@
 #include <optional>
 #include <functional>
 #include <limits>
+#include <string_view>
+#include <cstdio>
+#include <cinttypes>
 
 #include <event_registry.hpp>
 #include <event.hpp>
@@ -71,6 +74,23 @@ private:
 [[nodiscard]] inline EventTracer& tracer()
 {
     return EventTracer::get_single_instance();
+}
+
+/// @brief Event formatter
+/// @param event Event to format
+/// @return Formatted event as a string_view
+[[nodiscard]] inline std::string_view format(const EventDesc& event)
+{
+    static constexpr auto EVENT_STR_SIZE = std::numeric_limits<decltype(event.ts)>::digits10 +
+                                           std::numeric_limits<decltype(event.id)>::digits10 +
+                                           std::numeric_limits<decltype(event.ctx.id)>::digits10 +
+                                           std::numeric_limits<decltype(event.ctx.prio)>::digits10 +
+                                           30 /* message body (braces, commas, etc) + null terminator */ +
+                                           5  /* just in case */;
+    static char event_str[EVENT_STR_SIZE];
+    std::sprintf(event_str, "{et:{ts:%" PRIu64 ",id:%" PRIu8 ",ctx:{id:%" PRIu16 ",pr:%" PRIu16 "}}}\n",
+                 event.ts, event.id, event.ctx.id, event.ctx.prio);
+    return event_str;
 }
 
 } // namespace event_tracer::freertos
