@@ -76,10 +76,11 @@ private:
     return EventTracer::get_single_instance();
 }
 
-/// @brief Event formatter
+/// @brief Event string formatter
 /// @param event Event to format
+/// @param newline Indicator for adding newline character at the end of string
 /// @return Formatted event as a string_view
-[[nodiscard]] inline std::string_view format(const EventDesc& event)
+[[nodiscard]] inline std::string_view format(const EventDesc& event, bool newline = true)
 {
     static constexpr auto EVENT_STR_SIZE = std::numeric_limits<decltype(event.ts)>::digits10 +
                                            std::numeric_limits<decltype(event.id)>::digits10 +
@@ -88,8 +89,9 @@ private:
                                            30 /* message body (braces, commas, etc) + null terminator */ +
                                            5  /* just in case */;
     static char event_str[EVENT_STR_SIZE];
-    std::sprintf(event_str, "{et:{ts:%" PRIu64 ",id:%" PRIu8 ",ctx:{id:%" PRIu16 ",pr:%" PRIu16 "}}}\n",
-                 event.ts, event.id, event.ctx.id, event.ctx.prio);
+    std::snprintf(event_str, EVENT_STR_SIZE,
+                  "{et:{ts:%" PRIu64 ",id:%" PRIu8 ",ctx:{id:%" PRIu16 ",pr:%" PRIu16 "}}}%s",
+                  event.ts, event.id, event.ctx.id, event.ctx.prio, newline ? "\n" : "");
     return event_str;
 }
 
