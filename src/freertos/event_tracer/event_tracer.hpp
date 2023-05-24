@@ -27,12 +27,6 @@ static constexpr EventContext GLOBAL_CONTEXT {
     .prio = std::numeric_limits<uint8_t>::min()
 };
 
-/// @brief ISR context constant
-static constexpr EventContext ISR_CONTEXT {
-    .id = std::numeric_limits<uint8_t>::max(),
-    .prio = std::numeric_limits<uint8_t>::max()
-};
-
 using EventDesc = event_tracer::EventDesc<EventContext>;
 using EventRegistry = event_tracer::EventRegistry<EventDesc>;
 

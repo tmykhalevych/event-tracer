@@ -8,24 +8,18 @@
 
 #include <string_view>
 
-extern "C" void vTracesInit(uint8_t *puBuff,
+extern "C" void vTracesInit(uint8_t* puBuff,
                             size_t uxCapasity,
-                            uxGetTime *pfnGetSteadyTimestamp,
-                            xPrintTraces *pfnDataOutputMethod,
-                            xPrintTraces *pfnMetaOutputMethod)
+                            uxGetTime* pfnGetSteadyTimestamp,
+                            xPrintTraces* pfnDataOutputMethod,
+                            xPrintTraces* pfnMetaOutputMethod)
 {
     using namespace event_tracer::freertos;
 
-    auto data_output_cb = [pfnDataOutputMethod](std::string_view data) { pfnDataOutputMethod(data.data()); };
-    auto meta_output_cb = [pfnMetaOutputMethod](std::string_view meta) { pfnMetaOutputMethod(meta.data()); };
-
     struct EventTracerContext
     {
-        using data_callback_type = decltype(data_output_cb);
-        using meta_callback_type = decltype(meta_output_cb);
-
-        data_callback_type data_cb;
-        meta_callback_type meta_cb;
+        xPrintTraces* data_cb;
+        xPrintTraces* meta_cb;
     };
 
     struct DataReadyMessage
@@ -51,7 +45,7 @@ extern "C" void vTracesInit(uint8_t *puBuff,
             if (xQueueReceive(data_ready_queue, &msg, portMAX_DELAY)) {
                 assert(msg.registry);
                 for (const auto& event : *msg.registry) {
-                    callbacks.data_cb(format(event));
+                    callbacks.data_cb(format(event).data());
                 }
                 // notify event tracer that we're done handling the data
                 msg.done_cb();
@@ -80,8 +74,8 @@ extern "C" void vTracesInit(uint8_t *puBuff,
     data_ready_queue = xQueueCreate(DATA_REGISTRY_QUEUE_SIZE, sizeof(DataReadyMessage));
 
     static EventTracerContext context {
-        .data_cb = std::move(data_output_cb),
-        .meta_cb = std::move(meta_output_cb)
+        .data_cb = pfnDataOutputMethod,
+        .meta_cb = pfnMetaOutputMethod
     };
 
     xTaskCreate(tracer_task, "event_tracer", configMINIMAL_STACK_SIZE, &context, (configTIMER_TASK_PRIORITY - 1), nullptr);

@@ -9,14 +9,19 @@ namespace event_tracer::freertos
 {
 
 EventTracer* EventTracer::m_single_instance = nullptr;
+static constexpr auto MIN_REGISTRY_CAPACITY = 20;
 
 EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb)
     : m_data_ready_cb(data_ready_cb)
 {
+    assert(buff);
+
     const size_t registry_capacity = capacity / sizeof(EventDesc) / 2;
     EventDesc *registry_ptr = reinterpret_cast<EventDesc*>(buff);
 
-    /// @todo Add checks here
+    assert(registry_capacity > 1);
+    if (registry_capacity < MIN_REGISTRY_CAPACITY)
+        error("Buffer size could be insufficient");
 
     m_active_registry = &m_registries[0].emplace(registry_ptr, registry_capacity);
     m_pending_registry = &m_registries[1].emplace(registry_ptr + registry_capacity, registry_capacity);

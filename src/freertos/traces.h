@@ -47,11 +47,11 @@ typedef uint64_t uxGetTime (void);
 /// @param pfnGetSteadyTimestamp Pointer to function that allows to get steady timestamps
 /// @param pfnDataOutputMethod User defined provider for tracing data
 /// @param pfnMetaOutputMethod User defined provider for tracing meta data (task names, associated with IDs, etc.)
-void vTracesInit(uint8_t *puBuff,
+void vTracesInit(uint8_t* puBuff,
                  size_t uxCapasity,
-                 uxGetTime *pfnGetSteadyTimestamp,
-                 xPrintTraces *pfnDataOutputMethod,
-                 xPrintTraces *pfnMetaOutputMethod);
+                 uxGetTime* pfnGetSteadyTimestamp,
+                 xPrintTraces* pfnDataOutputMethod,
+                 xPrintTraces* pfnMetaOutputMethod);
 
 #ifdef __cplusplus
     } // extern "C"
