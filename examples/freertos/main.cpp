@@ -49,17 +49,23 @@ int main()
     return 0;
 }
 
+/// @brief Macro to stuck forever
+#define STUCK while (true) {}
+
 extern "C" void vApplicationMallocFailedHook(void)
 {
     std::cerr << "malloc failed" << std::endl;
+    STUCK;
 }
 
 extern "C" void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
     std::cerr << "stack overflow, task: " << std::string_view(pcTaskName) << std::endl;
+    STUCK;
 }
 
 extern "C" void vAssertCalled(const char *const pcFileName, unsigned long ulLine)
 {
     std::cerr << "assert at " << std::string_view(pcFileName) << ":" << ulLine << std::endl;
+    STUCK;
 }

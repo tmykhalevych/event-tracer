@@ -6,11 +6,11 @@
 #define configUSE_TRACE_FACILITY          1
 #define INCLUDE_xTaskGetCurrentTaskHandle 1
 
-#ifdef USE_TASK_TRACES
+#ifdef tracerUSE_TASK_TRACES
     #include "task_traces.h"
 #endif
 
-#ifdef USE_ALLOCATOR_TRACES
+#ifdef tracerUSE_ALLOC_TRACES
     #include "alloc_traces.h"
 #endif
 
