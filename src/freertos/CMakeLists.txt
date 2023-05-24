@@ -1,4 +1,6 @@
-option(TASK_TRACES   "Use task traces"             ON)
+add_subdirectory(event_tracer)
+
+option(TASK_TRACES   "Use task traces"             OFF)
 option(QUEUE_TRACES  "Use queue traces"            OFF)
 option(SYNCH_TRACES  "Use synchronisation traces"  OFF)
 option(SBUFF_TRACES  "Use stream buffer traces"    OFF)
@@ -25,6 +27,30 @@ if(TASK_TRACES)
   target_compile_definitions(freertos-traces INTERFACE tracerUSE_TASK_TRACES)
 endif()
 
+if(QUEUE_TRACES)
+  target_compile_definitions(freertos-traces INTERFACE tracerUSE_QUEUE_TRACES)
+endif()
+
+if(SYNCH_TRACES)
+  target_compile_definitions(freertos-traces INTERFACE tracerUSE_SYNCH_TRACES)
+endif()
+
+if(SBUFF_TRACES)
+  target_compile_definitions(freertos-traces INTERFACE tracerUSE_SBUFF_TRACES)
+endif()
+
+if(TIMER_TRACES)
+  target_compile_definitions(freertos-traces INTERFACE tracerUSE_TIMER_TRACES)
+endif()
+
+if(POWER_TRACES)
+  target_compile_definitions(freertos-traces INTERFACE tracerUSE_POWER_TRACES)
+endif()
+
 if(ALLOC_TRACES)
   target_compile_definitions(freertos-traces INTERFACE tracerUSE_ALLOC_TRACES)
+endif()
+
+if(EGROUP_TRACES)
+  target_compile_definitions(freertos-traces INTERFACE tracerUSE_EGROUP_TRACES)
 endif()

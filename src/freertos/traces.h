@@ -9,9 +9,26 @@
 #ifdef tracerUSE_TASK_TRACES
     #include "task_traces.h"
 #endif
-
+#ifdef tracerUSE_QUEUE_TRACES
+    #include "queue_traces.h"
+#endif
+#ifdef tracerUSE_SYNCH_TRACES
+    #include "synch_traces.h"
+#endif
+#ifdef tracerUSE_SBUFF_TRACES
+    #include "sbuff_traces.h"
+#endif
+#ifdef tracerUSE_TIMER_TRACES
+    #include "timer_traces.h"
+#endif
+#ifdef tracerUSE_POWER_TRACES
+    #include "power_traces.h"
+#endif
 #ifdef tracerUSE_ALLOC_TRACES
     #include "alloc_traces.h"
+#endif
+#ifdef tracerUSE_EGROUP_TRACES
+    #include "egroup_traces.h"
 #endif
 
 #ifdef __cplusplus
