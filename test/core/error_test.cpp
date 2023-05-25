@@ -3,11 +3,16 @@
 #define tracerUSE_ERROR_HOOK
 #include <error.hpp>
 
+namespace
+{
+
 static bool error_detected = false;
 extern "C" void vTracerError(const char* const pcErrorMsg)
 {
     error_detected = true;
 }
+
+} // namespace
 
 TEST(EventTracerError, ErrorDetected) {
     EXPECT_FALSE(error_detected);

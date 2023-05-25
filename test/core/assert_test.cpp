@@ -3,11 +3,16 @@
 #define tracerUSE_ASSERT_HOOK
 #include <assert.hpp>
 
+namespace
+{
+
 static bool assert_detected = false;
 extern "C" void vTracerAssert(const char* const pcFileName, unsigned long ulLine)
 {
     assert_detected = true;
 }
+
+} // namespace
 
 TEST(EventTracerAssert, AssertDetected) {
     EXPECT_FALSE(assert_detected);
