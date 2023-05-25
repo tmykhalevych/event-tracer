@@ -1,23 +1,15 @@
 #pragma once
 
-#include <assert.hpp>
-#include <error.hpp>
-
-static bool g_assert_detected = false;
-static bool g_error_detected = false;
-
-extern "C" inline void vTracerAssert(const char* const pcFileName, unsigned long ulLine)
+namespace impl
 {
-    g_assert_detected = true;
-}
 
-extern "C" inline void vTracerError(const char* const pcErrorMsg)
-{
-    g_error_detected = true;
-}
+bool assert_happened();
+bool error_happened();
+void reset_error_assert();
 
-constexpr void reset_error_assert()
-{
-    g_assert_detected = false;
-    g_error_detected = false;
-}
+} // namespace impl
+
+#define EXPECT_ASSERT() EXPECT_TRUE(impl::assert_happened())
+#define EXPECT_ERROR() EXPECT_TRUE(impl::error_happened())
+#define EXPECT_NO_ERROR_OR_ASSERT() EXPECT_FALSE(impl::error_happened() || impl::assert_happened())
+#define CLEAR_ERROR_ASSERT() impl::reset_error_assert()

@@ -48,6 +48,8 @@ private:
 
     std::optional<uint64_t> m_first_ts;
     std::function<void(EventRegistry<event_desc_t>&)> m_ready_cb;
+
+    friend class EventRegistryTester;
 };
 
 template<typename ED>
@@ -58,6 +60,7 @@ EventRegistry<ED>::EventRegistry(event_desc_t* buff, size_t capacity)
     , m_next(m_begin)
 {
     ASSERT(buff);
+    ASSERT(capacity > 0);
 }
 
 template<typename ED>
@@ -66,7 +69,9 @@ EventRegistry<ED>::EventRegistry(size_t capacity)
     , m_heap_allocated(true)
     , m_begin(new event_desc_t[capacity])
     , m_next(m_begin)
-{}
+{
+    ASSERT(capacity > 0);
+}
 
 template<typename ED>
 EventRegistry<ED>::~EventRegistry()

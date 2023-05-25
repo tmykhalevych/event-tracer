@@ -1,5 +1,11 @@
-add_executable(core-test assert_test.cpp error_test.cpp)
+add_executable(core-test
+    assert_test.cpp
+    error_test.cpp
+    event_registry_test.cpp
+    error_assert_impl.cpp)
+
 target_link_libraries(core-test event-tracer-core)
 target_include_directories(core-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(core-test PRIVATE tracerUSE_ERROR_HOOK tracerUSE_ASSERT_HOOK)
+
 mark_as_gtest(core-test)

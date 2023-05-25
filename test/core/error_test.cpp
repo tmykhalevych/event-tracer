@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
+#include <error.hpp>
 #include <error_assert_impl.hpp>
 
-TEST(EventTracerError, ErrorDetected) {
-    reset_error_assert();
-    EXPECT_FALSE(g_error_detected);
+TEST(Error, Detected) {
+    CLEAR_ERROR_ASSERT();
     ERROR("test error");
-    EXPECT_TRUE(g_error_detected);
+    EXPECT_ERROR();
 }
