@@ -6,4 +6,5 @@ function(mark_as_gtest TARGET)
   add_test(NAME ${TARGET} COMMAND ${TARGET})
 endfunction()
 
+add_subdirectory(infra)
 add_subdirectory(core)

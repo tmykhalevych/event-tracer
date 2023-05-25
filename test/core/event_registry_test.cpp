@@ -76,6 +76,7 @@ TEST(EventRegistry, Add)
 
     registry.reset();
     registry.add(TestEventDesc{});
+
     EXPECT_NO_ERROR_OR_ASSERT();
 }
 
