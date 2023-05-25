@@ -18,18 +18,23 @@ extern "C" void vTracerError(const char* const pcErrorMsg)
     g_error = true;
 }
 
-bool impl::assert_happened()
+namespace impl
+{
+
+bool assert_happened()
 {
     return g_assert;
 }
 
-bool impl::error_happened()
+bool error_happened()
 {
     return g_error;
 }
 
-void impl::reset_error_assert()
+void reset_error_assert()
 {
     g_error = false;
     g_assert = false;
 }
+
+} // namespace impl
