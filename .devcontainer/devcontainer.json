@@ -1,0 +1,23 @@
+{
+    "name": "C++ workspace",
+    "build": { "dockerfile": "Dockerfile" },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools-extension-pack",
+                "twxs.cmake",
+                "ms-vscode.cmake-tools",
+                "vivaxy.vscode-conventional-commits",
+                "ms-azuretools.vscode-docker",
+                "cschlosser.doxdocgen",
+                "ms-vscode.makefile-tools"
+            ],
+            "settings": {
+                "terminal.integrated.profiles.linux": { "zsh": { "path": "/usr/bin/zsh" }},
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "editor.rulers": [ 120 ]
+            }
+        }
+    },
+    "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
+}
