@@ -8,6 +8,6 @@ set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-add_subdirectory(src)
 add_subdirectory(examples)
 add_subdirectory(test)
+add_subdirectory(src)

@@ -57,7 +57,7 @@ EventRegistry<ED>::EventRegistry(event_desc_t* buff, size_t capacity)
     , m_begin(buff)
     , m_next(m_begin)
 {
-    assert(buff);
+    ASSERT(buff);
 }
 
 template<typename ED>
@@ -88,7 +88,7 @@ void EventRegistry<ED>::add(event_desc_t event)
 
     const event_desc_t* end = m_begin + m_capacity;
     if (m_next == end) {
-        error("Buffer full, please reset before use");
+        ERROR("Buffer full, please reset before use");
         return;
     }
 

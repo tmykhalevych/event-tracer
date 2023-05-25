@@ -35,15 +35,15 @@ extern "C" void vTracesInit(uint8_t* puBuff,
 
     const auto tracer_task = [](void* context)
     {
-        assert(context);
-        assert(data_ready_queue);
+        ASSERT(context);
+        ASSERT(data_ready_queue);
 
         auto &callbacks = *reinterpret_cast<EventTracerContext*>(context);
         DataReadyMessage msg;
 
         while (true) {
             if (xQueueReceive(data_ready_queue, &msg, portMAX_DELAY)) {
-                assert(msg.registry);
+                ASSERT(msg.registry);
                 for (const auto& event : *msg.registry) {
                     callbacks.data_cb(format(event).data());
                 }
@@ -55,7 +55,7 @@ extern "C" void vTracesInit(uint8_t* puBuff,
 
     const auto data_ready_handler = [](EventRegistry& registry, EventTracer::data_done_cb_t done_cb)
     {
-        assert(data_ready_queue);
+        ASSERT(data_ready_queue);
 
         DataReadyMessage msg {
             .registry = &registry,
@@ -63,7 +63,7 @@ extern "C" void vTracesInit(uint8_t* puBuff,
         };
 
         if (xQueueSend(data_ready_queue, &msg, 0 /* don't wait */) != pdPASS) {
-            error("Failed to send tracing data");
+            ERROR("Failed to send tracing data");
         }
     };
 
