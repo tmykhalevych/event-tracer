@@ -1,6 +1,5 @@
 ---
-Language:        Cpp
-# BasedOnStyle:  Google
+Language:  Cpp
 AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
 AlignConsecutiveMacros: false
@@ -15,10 +14,10 @@ AllowAllArgumentsOnNextLine: true
 AllowAllConstructorInitializersOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortEnumsOnASingleLine: true
-AllowShortBlocksOnASingleLine: Never
-AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: All
-AllowShortLambdasOnASingleLine: All
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: true
+AllowShortLambdasOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLoopsOnASingleLine: true
 AlwaysBreakAfterDefinitionReturnType: None
@@ -27,19 +26,20 @@ AlwaysBreakBeforeMultilineStrings: true
 AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: true
 BinPackParameters: true
+BreakBeforeBraces: Custom
 BraceWrapping:
   AfterCaseLabel:  false
-  AfterClass:      false
-  AfterControlStatement: Never
-  AfterEnum:       false
-  AfterFunction:   false
-  AfterNamespace:  false
+  AfterClass:      true
+  AfterControlStatement: MultiLine
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterNamespace:  true
   AfterObjCDeclaration: false
-  AfterStruct:     false
-  AfterUnion:      false
-  AfterExternBlock: false
-  BeforeCatch:     false
-  BeforeElse:      false
+  AfterStruct:     true
+  AfterUnion:      true
+  AfterExternBlock: true
+  BeforeCatch:     true
+  BeforeElse:      true
   BeforeLambdaBody: false
   BeforeWhile:     false
   IndentBraces:    false
@@ -48,11 +48,10 @@ BraceWrapping:
   SplitEmptyNamespace: true
 BreakConstructorInitializers: BeforeComma
 BreakBeforeBinaryOperators: None
-BreakBeforeBraces: Attach
 BreakBeforeInheritanceComma: false
 BreakInheritanceList: BeforeColon
 BreakBeforeTernaryOperators: true
-BreakConstructorInitializersBeforeComma: false
+BreakConstructorInitializersBeforeComma: true
 BreakConstructorInitializers: BeforeColon
 BreakAfterJavaFieldAnnotations: false
 BreakStringLiterals: true
@@ -72,28 +71,13 @@ ForEachMacros:
   - foreach
   - Q_FOREACH
   - BOOST_FOREACH
-IncludeBlocks:   Regroup
-IncludeCategories:
-  - Regex:           '^<ext/.*\.h>'
-    Priority:        2
-    SortPriority:    0
-  - Regex:           '^<.*\.h>'
-    Priority:        1
-    SortPriority:    0
-  - Regex:           '^<.*'
-    Priority:        2
-    SortPriority:    0
-  - Regex:           '.*'
-    Priority:        3
-    SortPriority:    0
-IncludeIsMainRegex: '([-_](test|unittest))?$'
-IncludeIsMainSourceRegex: ''
+IncludeBlocks:   Preserve
 IndentCaseLabels: true
 IndentCaseBlocks: false
 IndentGotoLabels: true
 IndentPPDirectives: None
 IndentExternBlock: AfterExternBlock
-IndentWidth:     4
+IndentWidth: 4
 IndentWrappedFunctionNames: false
 InsertTrailingCommas: None
 JavaScriptQuotes: Leave
@@ -180,5 +164,7 @@ WhitespaceSensitiveMacros:
   - STRINGIZE
   - PP_STRINGIZE
   - BOOST_PP_STRINGIZE
+---
+Language: Json
+BasedOnStyle: llvm
 ...
-
