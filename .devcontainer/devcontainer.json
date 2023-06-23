@@ -12,7 +12,9 @@
         "vivaxy.vscode-conventional-commits",
         "ms-azuretools.vscode-docker",
         "cschlosser.doxdocgen",
-        "ms-vscode.makefile-tools"
+        "ms-vscode.makefile-tools",
+        "ms-python.vscode-pylance",
+        "ms-python.python"
       ],
       "settings": {
         "terminal.integrated.profiles.linux": {

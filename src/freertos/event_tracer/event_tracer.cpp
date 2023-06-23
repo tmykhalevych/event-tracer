@@ -1,6 +1,6 @@
-#include <event_tracer.hpp>
 #include <assert.hpp>
 #include <error.hpp>
+#include <event_tracer.hpp>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -8,8 +8,8 @@
 namespace event_tracer::freertos
 {
 
-EventTracer* EventTracer::m_single_instance = nullptr;
-static constexpr auto MIN_REGISTRY_CAPACITY = 20;
+EventTracer *EventTracer::m_single_instance = nullptr;
+static constexpr size_t MIN_REGISTRY_CAPACITY = 20;
 
 EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb)
     : m_data_ready_cb(data_ready_cb)
@@ -17,16 +17,17 @@ EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_
     ASSERT(buff);
 
     const size_t registry_capacity = capacity / sizeof(EventDesc) / 2;
-    EventDesc *registry_ptr = reinterpret_cast<EventDesc*>(buff);
+    EventDesc *registry_ptr = reinterpret_cast<EventDesc *>(buff);
 
     ASSERT(registry_capacity > 1);
-    if (registry_capacity < MIN_REGISTRY_CAPACITY)
+    if (registry_capacity < MIN_REGISTRY_CAPACITY) {
         ERROR("Buffer size could be insufficient");
+    }
 
     m_active_registry = &m_registries[0].emplace(registry_ptr, registry_capacity);
     m_pending_registry = &m_registries[1].emplace(registry_ptr + registry_capacity, registry_capacity);
 
-    const auto ready_cb = [this](EventRegistry& registry) { on_registry_ready(registry); };
+    const auto ready_cb = [this](EventRegistry &registry) { on_registry_ready(registry); };
     m_active_registry->set_ready_cb(ready_cb);
     m_pending_registry->set_ready_cb(ready_cb);
 }
@@ -37,7 +38,7 @@ void EventTracer::set_single_instance(EventTracer *tracer)
     m_single_instance = tracer;
 }
 
-EventTracer& EventTracer::get_single_instance()
+EventTracer &EventTracer::get_single_instance()
 {
     ASSERT(m_single_instance);
     return *m_single_instance;
@@ -49,10 +50,7 @@ EventDesc::timestamp_type EventTracer::now() const
     return m_get_time_cb();
 }
 
-void EventTracer::register_event(EventDesc desc)
-{
-    m_active_registry->add(std::move(desc));
-}
+void EventTracer::register_event(EventDesc desc) { m_active_registry->add(std::move(desc)); }
 
 void EventTracer::register_event(Event event)
 {
@@ -64,17 +62,10 @@ void EventTracer::register_event(Event event)
     if (tcb) {
         TaskStatus_t info;
         vTaskGetInfo(tcb, &info, pdFALSE, eInvalid);
-        ctx = {
-            .id = static_cast<uint8_t>(info.xTaskNumber),
-            .prio = static_cast<uint8_t>(info.uxCurrentPriority)
-        };
+        ctx = {.id = static_cast<uint8_t>(info.xTaskNumber), .prio = static_cast<uint8_t>(info.uxCurrentPriority)};
     }
 
-    register_event({
-        .ts = timestamp,
-        .id = to_underlying(event),
-        .ctx = std::move(ctx)
-    });
+    register_event({.ts = timestamp, .id = to_underlying(event), .ctx = std::move(ctx)});
 }
 
 void EventTracer::notify_done(EventRegistry &registry)
@@ -92,7 +83,7 @@ void EventTracer::on_registry_ready(EventRegistry &registry)
     }
 
     std::swap(m_active_registry, m_pending_registry);
-    m_data_ready_cb(*m_pending_registry, [this, &registry = *m_pending_registry]{ notify_done(registry); });
+    m_data_ready_cb(*m_pending_registry, [this, &registry = *m_pending_registry] { notify_done(registry); });
 }
 
-} // namespace event_tracer::freertos
+}  // namespace event_tracer::freertos
