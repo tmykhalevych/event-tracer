@@ -1,9 +1,10 @@
-#include <gtest/gtest.h>
 #include <error.hpp>
 #include <error_assert_impl.hpp>
+#include <gtest/gtest.h>
 
-TEST(Error, Detected) {
+TEST(Error, Detected)
+{
     CLEAR_ERROR_ASSERT();
-    ERROR("test error");
+    ET_ERROR("test error");
     EXPECT_ERROR();
 }

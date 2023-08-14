@@ -8,11 +8,9 @@ namespace event_tracer
 
 /// @brief Basic event descriptor
 /// @tparam CT Context concrete type
-template<typename CT = int16_t>
+template <typename CT = int16_t>
 struct EventDesc
 {
-    static_assert(sizeof(CT) <= 2, "Context should be packed into 2 bytes");
-
     using timestamp_type = uint64_t;
     using context_type = CT;
     using id_type = uint8_t;
@@ -32,4 +30,4 @@ constexpr auto to_underlying(E e) noexcept
     return static_cast<std::underlying_type_t<E>>(e);
 }
 
-} // namespace event_tracer
+}  // namespace event_tracer

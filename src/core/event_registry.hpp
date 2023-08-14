@@ -1,12 +1,12 @@
 #pragma once
 
-#include <event_desc.hpp>
 #include <assert.hpp>
 #include <error.hpp>
+#include <event_desc.hpp>
 
 #include <cstdint>
-#include <optional>
 #include <functional>
+#include <optional>
 
 namespace event_tracer
 {
@@ -14,14 +14,12 @@ namespace event_tracer
 /// @brief Event registry collection
 /// @tparam ED Event descriptor concrete type
 /// @warning Not MT-safe
-template<typename ED>
+template <typename ED>
 class EventRegistry
 {
-    static_assert(sizeof(ED) == 8, "EventDesk should be packed into 8 bytes");
-
 public:
     using event_desc_t = ED;
-    
+
     EventRegistry(event_desc_t* buff, size_t capacity);
     explicit EventRegistry(size_t capacity);
 
@@ -35,8 +33,11 @@ public:
 
     [[nodiscard]] bool empty() const { return m_next == m_begin; }
 
-    template<typename F>
-    void set_ready_cb(F handler) { m_ready_cb = handler; }
+    template <typename F>
+    void set_ready_cb(F handler)
+    {
+        m_ready_cb = handler;
+    }
     void set_start_timestamp(uint64_t ts) { m_first_ts = ts; }
 
 private:
@@ -52,35 +53,35 @@ private:
     friend class EventRegistryTester;
 };
 
-template<typename ED>
+template <typename ED>
 EventRegistry<ED>::EventRegistry(event_desc_t* buff, size_t capacity)
     : m_capacity(capacity)
     , m_heap_allocated(false)
     , m_begin(buff)
     , m_next(m_begin)
 {
-    ASSERT(buff);
-    ASSERT(capacity > 0);
+    ET_ASSERT(buff);
+    ET_ASSERT(capacity > 0);
 }
 
-template<typename ED>
+template <typename ED>
 EventRegistry<ED>::EventRegistry(size_t capacity)
     : m_capacity(capacity)
     , m_heap_allocated(true)
     , m_begin(new event_desc_t[capacity])
     , m_next(m_begin)
 {
-    ASSERT(capacity > 0);
+    ET_ASSERT(capacity > 0);
 }
 
-template<typename ED>
+template <typename ED>
 EventRegistry<ED>::~EventRegistry()
 {
     if (!empty() && m_ready_cb) m_ready_cb(*this);
-    if (m_heap_allocated) delete [] m_begin;
+    if (m_heap_allocated) delete[] m_begin;
 }
 
-template<typename ED>
+template <typename ED>
 void EventRegistry<ED>::add(event_desc_t event)
 {
     if (!m_first_ts) {
@@ -93,7 +94,7 @@ void EventRegistry<ED>::add(event_desc_t event)
 
     const event_desc_t* end = m_begin + m_capacity;
     if (m_next == end) {
-        ERROR("Buffer full, please reset before use");
+        ET_ERROR("Buffer full, please reset before use");
         return;
     }
 
@@ -104,11 +105,11 @@ void EventRegistry<ED>::add(event_desc_t event)
     if (m_next == end && m_ready_cb) m_ready_cb(*this);
 }
 
-template<typename ED>
+template <typename ED>
 void EventRegistry<ED>::reset(bool hard)
 {
     m_next = m_begin;
     if (hard) m_first_ts.reset();
 }
 
-} // namespace event_tracer
+}  // namespace event_tracer

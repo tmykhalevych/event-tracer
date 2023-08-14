@@ -1,11 +1,11 @@
 #include <FreeRTOS.h>
 #include <task.h>
 
-#include <iostream>
-#include <string_view>
-#include <random>
-#include <utility>
 #include <chrono>
+#include <iostream>
+#include <random>
+#include <string_view>
+#include <utility>
 
 static constexpr auto MAX_TASK_PRIORITY = configTIMER_TASK_PRIORITY - 2;
 static const auto MIN_TASK_STACK_SIZE = configMINIMAL_STACK_SIZE;
@@ -23,9 +23,9 @@ int main()
         return duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count();
     };
 
-    vTracesInit(TRACES_BUFF, TRACES_BUFF_LEN, get_steady_time, printf, printf);
+    vTracesInit(TRACES_BUFF, TRACES_BUFF_LEN, get_steady_time, printf);
 
-    const auto task = [](void*) {
+    const auto task = [](void *) {
         std::random_device dev;
         std::mt19937 rng(dev());
         std::uniform_int_distribution<std::mt19937::result_type> sleep_dist(TASK_SLEEP_RANGE_MS.first,
@@ -50,7 +50,9 @@ int main()
 }
 
 /// @brief Macro to stuck forever
-#define STUCK while (true) {}
+#define STUCK      \
+    while (true) { \
+    }
 
 extern "C" void vApplicationMallocFailedHook(void)
 {
