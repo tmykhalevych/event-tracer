@@ -11,6 +11,9 @@
 #include <event.hpp>
 #include <event_registry.hpp>
 
+#include <FreeRTOS.h>
+#include <task.h>
+
 namespace event_tracer::freertos
 {
 
@@ -22,8 +25,7 @@ struct EventContext
 };
 
 /// @brief Global context constant
-static constexpr EventContext GLOBAL_CONTEXT{.id = std::numeric_limits<uint8_t>::min(),
-                                             .prio = std::numeric_limits<uint8_t>::min()};
+static constexpr EventContext GLOBAL_CONTEXT{.id = 0, .prio = 0};
 
 using EventDesc = event_tracer::EventDesc<EventContext>;
 using EventRegistry = event_tracer::EventRegistry<EventDesc>;
@@ -46,17 +48,20 @@ public:
     void set_time_getter(get_time_cb_t cb) { m_get_time_cb = cb; }
     [[nodiscard]] EventDesc::timestamp_type now() const;
 
-    void register_event(EventDesc desc);
-    void register_event(Event event, std::optional<EventDesc::timestamp_type> timestamp = std::nullopt);
+    void register_event(Event event, std::optional<TaskHandle_t> task = std::nullopt,
+                        std::optional<EventDesc::timestamp_type> timestamp = std::nullopt);
 
 private:
     void on_registry_ready(EventRegistry &registry);
     void notify_done(EventRegistry &registry);
 
+    void on_task_delete(const TaskStatus_t &info);
+
     EventRegistry *m_active_registry;
     EventRegistry *m_pending_registry;
 
     std::array<std::optional<EventRegistry>, 2> m_registries;
+
     data_ready_cb_t m_data_ready_cb;
     get_time_cb_t m_get_time_cb;
 
@@ -71,18 +76,6 @@ private:
 /// @param event Event to format
 /// @param newline Indicator for adding newline character at the end of string
 /// @return Formatted event as a string_view
-[[nodiscard]] inline std::string_view format(const EventDesc &event, bool newline = true)
-{
-    static constexpr auto EVENT_STR_SIZE =
-        std::numeric_limits<decltype(event.ts)>::digits10 + std::numeric_limits<decltype(event.id)>::digits10 +
-        std::numeric_limits<decltype(event.ctx.id)>::digits10 +
-        std::numeric_limits<decltype(event.ctx.prio)>::digits10 +
-        30 /* message body (braces, commas, etc) + null terminator */ + 5 /* just in case */;
-    static char event_str[EVENT_STR_SIZE];
-    std::snprintf(event_str, EVENT_STR_SIZE,
-                  "{et:{ts:%" PRIu64 ",id:%" PRIu8 ",ctx:{id:%" PRIu16 ",pr:%" PRIu16 "}}}%s", event.ts, event.id,
-                  event.ctx.id, event.ctx.prio, newline ? "\n" : "");
-    return event_str;
-}
+[[nodiscard]] std::string_view format(const EventDesc &event, bool newline = true);
 
 }  // namespace event_tracer::freertos

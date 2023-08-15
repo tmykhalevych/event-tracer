@@ -2,8 +2,12 @@
 #include <error.hpp>
 #include <event_tracer.hpp>
 
-#include <FreeRTOS.h>
-#include <task.h>
+namespace
+{
+
+const char *get_task_name(UBaseType_t id) { return ""; }
+
+}  // namespace
 
 namespace event_tracer::freertos
 {
@@ -50,28 +54,36 @@ EventDesc::timestamp_type EventTracer::now() const
     return m_get_time_cb();
 }
 
-void EventTracer::register_event(EventDesc desc) { m_active_registry->add(std::move(desc)); }
-
-void EventTracer::register_event(Event event, std::optional<EventDesc::timestamp_type> timestamp)
+void EventTracer::register_event(Event event, std::optional<TaskHandle_t> task,
+                                 std::optional<EventDesc::timestamp_type> timestamp)
 {
     const auto ts = timestamp.value_or(now());
-    const auto tcb = xTaskGetCurrentTaskHandle();
+    const auto tcb = task.value_or(xTaskGetCurrentTaskHandle());
     EventContext ctx = GLOBAL_CONTEXT;
 
-    /// @todo consider handling "inside ISR" case
     if (tcb) {
         TaskStatus_t info;
         vTaskGetInfo(tcb, &info, pdFALSE, eInvalid);
+
+        if (event == Event::TASK_DELETE) {
+            on_task_delete(info);
+        }
+
         ctx = {.id = static_cast<uint8_t>(info.xTaskNumber), .prio = static_cast<uint8_t>(info.uxCurrentPriority)};
     }
 
-    register_event({.ts = ts, .id = to_underlying(event), .ctx = std::move(ctx)});
+    m_active_registry->add({.ts = ts, .id = to_underlying(event), .ctx = std::move(ctx)});
 }
 
 void EventTracer::notify_done(EventRegistry &registry)
 {
     ET_ASSERT(&registry != m_active_registry);
     registry.reset();
+}
+
+void EventTracer::on_task_delete(const TaskStatus_t &info)
+{
+    // TODO: add task name and id to cache
 }
 
 void EventTracer::on_registry_ready(EventRegistry &registry)
@@ -84,6 +96,22 @@ void EventTracer::on_registry_ready(EventRegistry &registry)
 
     std::swap(m_active_registry, m_pending_registry);
     m_data_ready_cb(*m_pending_registry, [this, &registry = *m_pending_registry] { notify_done(registry); });
+}
+
+std::string_view format(const EventDesc &event, bool newline)
+{
+    static constexpr auto EVENT_STR_SIZE =
+        std::numeric_limits<decltype(event.ts)>::digits10 + std::numeric_limits<decltype(event.id)>::digits10 +
+        std::numeric_limits<decltype(event.ctx.id)>::digits10 +
+        std::numeric_limits<decltype(event.ctx.prio)>::digits10 +
+        30 /* message body (braces, commas, etc) + null terminator */ + 5 /* just in case */;
+
+    static char event_str[EVENT_STR_SIZE];
+
+    std::snprintf(event_str, EVENT_STR_SIZE, "{ts:%" PRIu64 ",et:%" PRIu8 ",id:%" PRIu16 ",pr:%" PRIu16 ",nm:%s}%s",
+                  event.ts, event.id, event.ctx.id, event.ctx.prio, get_task_name(event.ctx.id), newline ? "\n" : "");
+
+    return event_str;
 }
 
 }  // namespace event_tracer::freertos
