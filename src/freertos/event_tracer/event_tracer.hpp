@@ -3,13 +3,13 @@
 #include <array>
 #include <cinttypes>
 #include <cstdio>
-#include <functional>
 #include <limits>
 #include <optional>
 #include <string_view>
 
 #include <event.hpp>
 #include <event_registry.hpp>
+#include <static_function.hpp>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -36,9 +36,9 @@ static_assert(sizeof(EventDesc) == 8, "EventDesk should be packed into 8 bytes")
 class EventTracer
 {
 public:
-    using data_done_cb_t = std::function<void()>;
-    using data_ready_cb_t = std::function<void(EventRegistry &, data_done_cb_t)>;
-    using get_time_cb_t = std::function<EventDesc::timestamp_type()>;
+    using data_done_cb_t = StaticFunction<void()>;
+    using data_ready_cb_t = StaticFunction<void(EventRegistry &, data_done_cb_t)>;
+    using get_time_cb_t = StaticFunction<EventDesc::timestamp_type()>;
 
     EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb);
 

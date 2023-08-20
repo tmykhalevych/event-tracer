@@ -3,9 +3,9 @@
 #include <assert.hpp>
 #include <error.hpp>
 #include <event_desc.hpp>
+#include <static_function.hpp>
 
 #include <cstdint>
-#include <functional>
 #include <optional>
 
 namespace event_tracer
@@ -19,6 +19,7 @@ class EventRegistry
 {
 public:
     using event_desc_t = ED;
+    using ready_cb_t = StaticFunction<void(EventRegistry<event_desc_t>&)>;
 
     EventRegistry(event_desc_t* buff, size_t capacity);
     explicit EventRegistry(size_t capacity);
@@ -48,7 +49,7 @@ private:
     event_desc_t* m_next;
 
     std::optional<uint64_t> m_first_ts;
-    std::function<void(EventRegistry<event_desc_t>&)> m_ready_cb;
+    ready_cb_t m_ready_cb;
 
     friend class EventRegistryTester;
 };
