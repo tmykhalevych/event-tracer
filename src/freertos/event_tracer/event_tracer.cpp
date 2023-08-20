@@ -28,8 +28,8 @@ EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_
         ET_ERROR("Buffer size could be insufficient");
     }
 
-    m_active_registry = &m_registries[0].emplace(registry_ptr, registry_capacity);
-    m_pending_registry = &m_registries[1].emplace(registry_ptr + registry_capacity, registry_capacity);
+    m_active_registry = &m_registries[0].emplace(Span(registry_ptr, registry_capacity));
+    m_pending_registry = &m_registries[1].emplace(Span(registry_ptr + registry_capacity, registry_capacity));
 
     const auto ready_cb = [this](EventRegistry &registry) { on_registry_ready(registry); };
     m_active_registry->set_ready_cb(ready_cb);

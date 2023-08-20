@@ -3,6 +3,7 @@
 #include <assert.hpp>
 #include <error.hpp>
 #include <event_desc.hpp>
+#include <span.hpp>
 #include <static_function.hpp>
 
 #include <cstdint>
@@ -21,9 +22,7 @@ public:
     using event_desc_t = ED;
     using ready_cb_t = StaticFunction<void(EventRegistry<event_desc_t>&)>;
 
-    EventRegistry(event_desc_t* buff, size_t capacity);
-    explicit EventRegistry(size_t capacity);
-
+    explicit EventRegistry(Span<event_desc_t> buff);
     ~EventRegistry();
 
     void add(event_desc_t event);
@@ -39,11 +38,11 @@ public:
     {
         m_ready_cb = handler;
     }
+
     void set_start_timestamp(uint64_t ts) { m_first_ts = ts; }
 
 private:
     const size_t m_capacity;
-    const bool m_heap_allocated;
 
     event_desc_t* m_begin;
     event_desc_t* m_next;
@@ -55,31 +54,15 @@ private:
 };
 
 template <typename ED>
-EventRegistry<ED>::EventRegistry(event_desc_t* buff, size_t capacity)
-    : m_capacity(capacity)
-    , m_heap_allocated(false)
-    , m_begin(buff)
-    , m_next(m_begin)
+EventRegistry<ED>::EventRegistry(Span<event_desc_t> buff) : m_capacity(buff.size), m_begin(buff.data), m_next(m_begin)
 {
     ET_ASSERT(buff);
-    ET_ASSERT(capacity > 0);
-}
-
-template <typename ED>
-EventRegistry<ED>::EventRegistry(size_t capacity)
-    : m_capacity(capacity)
-    , m_heap_allocated(true)
-    , m_begin(new event_desc_t[capacity])
-    , m_next(m_begin)
-{
-    ET_ASSERT(capacity > 0);
 }
 
 template <typename ED>
 EventRegistry<ED>::~EventRegistry()
 {
     if (!empty() && m_ready_cb) m_ready_cb(*this);
-    if (m_heap_allocated) delete[] m_begin;
 }
 
 template <typename ED>
