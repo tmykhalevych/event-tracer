@@ -48,14 +48,14 @@ EventTracer &EventTracer::get_single_instance()
     return *m_single_instance;
 }
 
-EventDesc::timestamp_type EventTracer::now() const
+EventDesc::timestamp_t EventTracer::now() const
 {
     ET_ASSERT(m_get_time_cb);
     return m_get_time_cb();
 }
 
 void EventTracer::register_event(Event event, std::optional<TaskHandle_t> task,
-                                 std::optional<EventDesc::timestamp_type> timestamp)
+                                 std::optional<EventDesc::timestamp_t> timestamp)
 {
     const auto ts = timestamp.value_or(now());
     const auto tcb = task.value_or(xTaskGetCurrentTaskHandle());

@@ -38,7 +38,7 @@ class EventTracer
 public:
     using data_done_cb_t = StaticFunction<void()>;
     using data_ready_cb_t = StaticFunction<void(EventRegistry &, data_done_cb_t)>;
-    using get_time_cb_t = StaticFunction<EventDesc::timestamp_type()>;
+    using get_time_cb_t = StaticFunction<EventDesc::timestamp_t()>;
 
     EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb);
 
@@ -46,10 +46,10 @@ public:
     [[nodiscard]] static EventTracer &get_single_instance();
 
     void set_time_getter(get_time_cb_t cb) { m_get_time_cb = cb; }
-    [[nodiscard]] EventDesc::timestamp_type now() const;
+    [[nodiscard]] EventDesc::timestamp_t now() const;
 
     void register_event(Event event, std::optional<TaskHandle_t> task = std::nullopt,
-                        std::optional<EventDesc::timestamp_type> timestamp = std::nullopt);
+                        std::optional<EventDesc::timestamp_t> timestamp = std::nullopt);
 
 private:
     void on_registry_ready(EventRegistry &registry);

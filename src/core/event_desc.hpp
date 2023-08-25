@@ -11,13 +11,13 @@ namespace event_tracer
 template <typename CT = int16_t>
 struct EventDesc
 {
-    using timestamp_type = uint64_t;
-    using context_type = CT;
-    using id_type = uint8_t;
+    using timestamp_t = uint64_t;
+    using context_t = CT;
+    using id_t = uint8_t;
 
-    timestamp_type ts : 40;
-    id_type id;
-    context_type ctx;
+    timestamp_t ts : 40;
+    id_t id;
+    context_t ctx;
 };
 
 /// @brief Helper to cast event type to underlying type
