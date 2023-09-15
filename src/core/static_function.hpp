@@ -15,12 +15,12 @@ static constexpr auto DEFAULT_CALLABLE_SIZE = 4 * sizeof(void *);
 
 /// @brief Simple callable type wrapper. Designed to be used instead of std::function. Does zero heap allocations.
 /// @tparam F Callable object invocation signature, e.g. void(int)
-/// @tparam Capacity Max size of internal buffer for storing callable object. Default is (4 * pointer size)
-template <typename F, size_t Capacity = DEFAULT_CALLABLE_SIZE>
+/// @tparam StorageSize Max size of internal buffer for storing callable object. Default is (4 * pointer size)
+template <typename F, size_t StorageSize = DEFAULT_CALLABLE_SIZE>
 class StaticFunction;
 
-template <typename TRet, typename... TArgs, size_t Capacity>
-class StaticFunction<TRet(TArgs...), Capacity>
+template <typename TRet, typename... TArgs, size_t StorageSize>
+class StaticFunction<TRet(TArgs...), StorageSize>
 {
 public:
     StaticFunction() : m_callable(nullptr, CallableI::destruct) {}
@@ -30,15 +30,15 @@ public:
     StaticFunction(StaticFunction &&other) : StaticFunction() { *this = std::move(other); }
 
     template <typename F>
-    StaticFunction(F f) : m_callable(new (m_buff.data()) Callable<F>(std::move(f)), CallableI::destruct)
+    StaticFunction(F f) : m_callable(new (m_storage.data()) Callable<F>(std::move(f)), CallableI::destruct)
     {
-        static_assert(sizeof(F) <= Capacity);
+        static_assert(sizeof(F) <= StorageSize);
     }
 
     StaticFunction &operator=(StaticFunction &other)
     {
-        std::copy(other.m_buff.begin(), other.m_buff.end(), m_buff.begin());
-        m_callable.reset(reinterpret_cast<CallableI *>(m_buff.data()));
+        std::copy(other.m_storage.begin(), other.m_storage.end(), m_storage.begin());
+        m_callable.reset(reinterpret_cast<CallableI *>(m_storage.data()));
         return *this;
     }
 
@@ -86,7 +86,7 @@ private:
     }
 
     typename CallableI::ptr_t m_callable;
-    std::array<uint8_t, Capacity> m_buff;
+    std::array<uint8_t, StorageSize> m_storage;
 };
 
 }  // namespace event_tracer
