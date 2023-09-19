@@ -2,6 +2,8 @@
 #include <error.hpp>
 #include <event_tracer.hpp>
 
+#include <cstring>
+
 namespace event_tracer::freertos
 {
 
@@ -57,41 +59,31 @@ void EventTracer::register_event(Event event, std::optional<TaskHandle_t> task,
 
     if (tcb) {
         vTaskGetInfo(tcb, &info, pdFALSE, eInvalid);
-        ctx = {.id = static_cast<uint8_t>(info.xTaskNumber), .prio = static_cast<uint8_t>(info.uxCurrentPriority)};
     }
 
-    // handle specific events differently
-    if (handle_specific(event, info)) {
-        return;
-    }
+    // add task name for task lifetime event
+    if (event == Event::TASK_CREATE || event == Event::TASK_DELETE) {
+        NamedEventDesk named_event_desc{
+            .ts = ts, .id = to_underlying(event), .ctx = {.id = static_cast<uint8_t>(info.xTaskNumber)}};
 
-    m_active_registry->add({.ts = ts, .id = to_underlying(event), .ctx = std::move(ctx)});
+        std::strncpy(named_event_desc.ctx.name, info.pcTaskName, sizeof(named_event_desc.ctx.name));
+
+        // TODO: push to client task for printing
+    }
+    else {
+        EventDesc event_desc{.ts = ts,
+                             .id = to_underlying(event),
+                             .ctx = {.id = static_cast<uint8_t>(info.xTaskNumber),
+                                     .prio = static_cast<uint8_t>(info.uxCurrentPriority)}};
+
+        m_active_registry->add(std::move(event_desc));
+    }
 }
 
 void EventTracer::notify_done(EventRegistry &registry)
 {
     ET_ASSERT(&registry != m_active_registry);
     registry.reset();
-}
-
-bool EventTracer::handle_specific(Event event, const TaskStatus_t &info)
-{
-    switch (event) {
-        case Event::TASK_CREATE: on_task_create(info); return true;
-        case Event::TASK_DELETE: on_task_delete(info); return true;
-
-        default: return false;
-    }
-}
-
-void EventTracer::on_task_create(const TaskStatus_t &info)
-{
-    // TODO: implement
-}
-
-void EventTracer::on_task_delete(const TaskStatus_t &info)
-{
-    // TODO: implement
 }
 
 void EventTracer::on_registry_ready(EventRegistry &registry)

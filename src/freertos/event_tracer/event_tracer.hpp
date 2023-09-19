@@ -17,11 +17,15 @@
 namespace event_tracer::freertos
 {
 
+using task_id_t = decltype(TaskStatus_t::xTaskNumber);
+using task_prio_t = decltype(TaskStatus_t::uxCurrentPriority);
+using task_name_t = char[configMAX_TASK_NAME_LEN];
+
 /// @brief FreeRTOS event context
 struct EventContext
 {
-    uint8_t id;
-    uint8_t prio;
+    task_id_t id;
+    task_prio_t prio;
 };
 
 /// @brief Global context constant
@@ -30,7 +34,15 @@ static constexpr EventContext GLOBAL_CONTEXT{.id = 0, .prio = 0};
 using EventDesc = event_tracer::EventDesc<EventContext>;
 using EventRegistry = event_tracer::EventRegistry<EventDesc>;
 
-static_assert(sizeof(EventDesc) == 8, "EventDesk should be packed into 8 bytes");
+/// @brief FreeRTOS named event context
+struct NamedEventContext
+{
+    task_id_t id;
+    task_name_t name;
+};
+
+using NamedEventDesk = event_tracer::EventDesc<NamedEventContext>;
+using NamedEventRegistry = event_tracer::EventRegistry<NamedEventDesk>;
 
 /// @brief FreeRTOS event tracer implementation
 class EventTracer
@@ -54,10 +66,6 @@ public:
 private:
     void on_registry_ready(EventRegistry &registry);
     void notify_done(EventRegistry &registry);
-
-    bool handle_specific(Event event, const TaskStatus_t &info);
-    void on_task_create(const TaskStatus_t &info);
-    void on_task_delete(const TaskStatus_t &info);
 
     EventRegistry *m_active_registry;
     EventRegistry *m_pending_registry;
