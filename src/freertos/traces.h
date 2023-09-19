@@ -24,13 +24,24 @@ extern "C"
     /// @brief Alias for user-defined time getter
     typedef uint64_t get_timestamp_cb_t(void);
 
+    /// @brief Traces settings
+    typedef struct
+    {
+        /// Pointer to buffer made for storing actual tracing data
+        uint8_t *buff;
+        /// Capacity of the buffer made for storing actual tracing data
+        size_t capacity;
+        /// Pointer to function that allows to get steady timestamps
+        get_timestamp_cb_t *get_timestamp_cb;
+        /// User defined provider for tracing data
+        print_traces_cb_t *print_traces_cb;
+        /// The size for the data traces queue, 2 is minimal value, that should be enough
+        int data_queue_size;
+    } TracesSettings;
+
     /// @brief Initiates FreeRTOS event-tracer
-    /// @param buff Pointer to buffer made for storing actual tracing data
-    /// @param capacity Capacity of the buffer made for storing actual tracing data
-    /// @param get_timestamp_cb Pointer to function that allows to get steady timestamps
-    /// @param print_traces_cb User defined provider for tracing data
-    void traces_init(uint8_t *buff, size_t capacity, get_timestamp_cb_t *get_timestamp_cb,
-                     print_traces_cb_t *print_traces_cb);
+    /// @param settings Traces settings
+    void traces_init(TracesSettings settings);
 
 #ifdef __cplusplus
 }  // extern "C"

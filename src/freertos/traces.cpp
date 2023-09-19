@@ -41,8 +41,7 @@ extern "C"
 
     void trace_free([[maybe_unused]] void* addr, [[maybe_unused]] size_t size) { tracer().register_event(Event::FREE); }
 
-    void traces_init(uint8_t* buff, size_t capacity, get_timestamp_cb_t* get_timestamp_cb,
-                     print_traces_cb_t* print_traces_cb)
+    void traces_init(TracesSettings settings)
     {
         struct EventTracerContext
         {
@@ -55,8 +54,6 @@ extern "C"
             EventTracer::data_done_cb_t done_cb;
         };
 
-        /// the size for the data traces queue, 2 is minimal value, that should be enough
-        static constexpr auto DATA_REGISTRY_QUEUE_SIZE = 2;
         // the queue is instanciated after event tracer to prevent traces when tracer is not ready
         static QueueHandle_t data_ready_queue = nullptr;
 
@@ -89,13 +86,13 @@ extern "C"
             }
         };
 
-        static EventTracer tracer(reinterpret_cast<std::byte*>(buff), capacity, data_ready_handler);
+        static EventTracer tracer(reinterpret_cast<std::byte*>(settings.buff), settings.capacity, data_ready_handler);
         EventTracer::set_single_instance(&tracer);
 
-        tracer.set_time_getter(get_timestamp_cb);
-        data_ready_queue = xQueueCreate(DATA_REGISTRY_QUEUE_SIZE, sizeof(DataReadyMessage));
+        tracer.set_time_getter(settings.get_timestamp_cb);
+        data_ready_queue = xQueueCreate(settings.data_queue_size, sizeof(DataReadyMessage));
 
-        static EventTracerContext context{.data_cb = print_traces_cb};
+        static EventTracerContext context{.data_cb = settings.print_traces_cb};
         xTaskCreate(tracer_task, "event_tracer", configMINIMAL_STACK_SIZE, &context, (configTIMER_TASK_PRIORITY - 1),
                     nullptr);
     }

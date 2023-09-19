@@ -12,7 +12,7 @@ static const auto MIN_TASK_STACK_SIZE = configMINIMAL_STACK_SIZE;
 static constexpr std::pair<int, int> TASK_SLEEP_RANGE_MS = {100, 500};
 static constexpr auto TASK_NUM = 5;
 static constexpr auto TASK_NAME_BASE = "task #";
-
+static constexpr auto DATA_REGISTRY_QUEUE_SIZE = 2;
 static constexpr auto TRACES_BUFF_LEN = 200 * sizeof(uint64_t);
 static uint8_t TRACES_BUFF[TRACES_BUFF_LEN];
 
@@ -23,7 +23,7 @@ int main()
         return duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count();
     };
 
-    traces_init(TRACES_BUFF, TRACES_BUFF_LEN, get_steady_time, printf);
+    traces_init({TRACES_BUFF, TRACES_BUFF_LEN, get_steady_time, printf, DATA_REGISTRY_QUEUE_SIZE});
 
     const auto task = [](void *) {
         std::random_device dev;
