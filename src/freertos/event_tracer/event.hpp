@@ -100,7 +100,13 @@ enum class Event : event_tracer::EventDesc<>::id_t
     EVENT_GROUP_SET_BITS,
     EVENT_GROUP_SET_BITS_FROM_ISR,
     EVENT_GROUP_SYNC_BLOCK,
-    EVENT_GROUP_WAIT_BITS_BLOCK
+    EVENT_GROUP_WAIT_BITS_BLOCK,
+    // user defined
+    EVENT_USER_1,
+    EVENT_USER_2,
+    EVENT_USER_3,
+    EVENT_USER_4,
+    EVENT_USER_5
 };
 
 }  // namespace event_tracer::freertos

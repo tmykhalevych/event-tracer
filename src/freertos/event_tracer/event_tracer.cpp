@@ -2,13 +2,6 @@
 #include <error.hpp>
 #include <event_tracer.hpp>
 
-namespace
-{
-
-const char *get_task_name(UBaseType_t id) { return ""; }
-
-}  // namespace
-
 namespace event_tracer::freertos
 {
 
@@ -108,8 +101,8 @@ std::string_view format(const EventDesc &event, bool newline)
 
     static char event_str[EVENT_STR_SIZE];
 
-    std::snprintf(event_str, EVENT_STR_SIZE, "{ts:%" PRIu64 ",et:%" PRIu8 ",id:%" PRIu16 ",pr:%" PRIu16 ",nm:%s}%s",
-                  event.ts, event.id, event.ctx.id, event.ctx.prio, get_task_name(event.ctx.id), newline ? "\n" : "");
+    std::snprintf(event_str, EVENT_STR_SIZE, "{ts:%" PRIu64 ",event:%" PRIu8 ",task:%" PRIu16 ",prio:%" PRIu16 "}%s",
+                  event.ts, event.id, event.ctx.id, event.ctx.prio, newline ? "\n" : "");
 
     return event_str;
 }
