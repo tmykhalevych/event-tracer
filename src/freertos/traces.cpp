@@ -86,13 +86,21 @@ extern "C"
             }
         };
 
-        static EventTracer tracer(reinterpret_cast<std::byte*>(settings.buff), settings.capacity, data_ready_handler);
+        static EventTracerContext context{.data_cb = settings.print_traces_cb};
+
+        const auto msg_handler = [](const MessageEventDesk& msg_event) {
+            ET_ASSERT(context.data_cb);
+            context.data_cb(format(msg_event).data());
+        };
+
+        static EventTracer tracer(reinterpret_cast<std::byte*>(settings.buff), settings.capacity, data_ready_handler,
+                                  msg_handler);
+
         EventTracer::set_single_instance(&tracer);
 
         tracer.set_time_getter(settings.get_timestamp_cb);
         data_ready_queue = xQueueCreate(settings.data_queue_size, sizeof(DataReadyMessage));
 
-        static EventTracerContext context{.data_cb = settings.print_traces_cb};
         xTaskCreate(tracer_task, "event_tracer", configMINIMAL_STACK_SIZE, &context, (configTIMER_TASK_PRIORITY - 1),
                     nullptr);
     }

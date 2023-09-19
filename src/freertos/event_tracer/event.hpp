@@ -5,10 +5,24 @@
 namespace event_tracer::freertos
 {
 
+/// @brief User tracing events enumeration
+enum class UserEvent : event_tracer::EventDesc<>::id_t
+{
+    UNDEFINED = 0,
+    // user defined events
+    EVENT_USER_1,
+    EVENT_USER_2,
+    EVENT_USER_3,
+    EVENT_USER_4,
+    EVENT_USER_5,
+    // end
+    LAST
+};
+
 /// @brief FreeRTOS tracing events enumeration
 enum class Event : event_tracer::EventDesc<>::id_t
 {
-    UNDEFINED = 0,
+    UNDEFINED = to_underlying(UserEvent::LAST),
     // task events
     TASK_MOVED_TO_READY_STATE,
     TASK_POST_MOVED_TO_READY_STATE,
@@ -101,12 +115,6 @@ enum class Event : event_tracer::EventDesc<>::id_t
     EVENT_GROUP_SET_BITS_FROM_ISR,
     EVENT_GROUP_SYNC_BLOCK,
     EVENT_GROUP_WAIT_BITS_BLOCK,
-    // user defined
-    EVENT_USER_1,
-    EVENT_USER_2,
-    EVENT_USER_3,
-    EVENT_USER_4,
-    EVENT_USER_5
 };
 
 }  // namespace event_tracer::freertos

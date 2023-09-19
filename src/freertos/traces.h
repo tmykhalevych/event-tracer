@@ -6,6 +6,18 @@
 #define configUSE_TRACE_FACILITY 1
 #define INCLUDE_xTaskGetCurrentTaskHandle 1
 
+#ifndef tracerMAX_EVENT_MESSAGE_LEN
+#define tracerMAX_EVENT_MESSAGE_LEN configMAX_TASK_NAME_LEN
+#endif
+
+#ifndef tracerTASK_ID_TYPE
+#define tracerTASK_ID_TYPE decltype(TaskStatus_t::xTaskNumber)
+#endif
+
+#ifndef tracerTASK_PRIO_TYPE
+#define tracerTASK_PRIO_TYPE decltype(TaskStatus_t::uxCurrentPriority)
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {

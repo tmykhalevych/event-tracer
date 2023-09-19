@@ -10,8 +10,8 @@ namespace event_tracer::freertos
 EventTracer *EventTracer::m_single_instance = nullptr;
 static constexpr size_t MIN_REGISTRY_CAPACITY = 20;
 
-EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb)
-    : m_data_ready_cb(data_ready_cb)
+EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb, message_cb_t message_cb)
+    : m_data_ready_cb(data_ready_cb), m_message_cb(message_cb)
 {
     ET_ASSERT(buff);
 
@@ -63,12 +63,11 @@ void EventTracer::register_event(Event event, std::optional<TaskHandle_t> task,
 
     // add task name for task lifetime event
     if (event == Event::TASK_CREATE || event == Event::TASK_DELETE) {
-        NamedEventDesk named_event_desc{
+        MessageEventDesk msg_event_desc{
             .ts = ts, .id = to_underlying(event), .ctx = {.id = static_cast<uint8_t>(info.xTaskNumber)}};
 
-        std::strncpy(named_event_desc.ctx.name, info.pcTaskName, sizeof(named_event_desc.ctx.name));
-
-        // TODO: push to client task for printing
+        std::strncpy(msg_event_desc.ctx.msg.data(), info.pcTaskName, msg_event_desc.ctx.msg.max_size());
+        m_message_cb(msg_event_desc);
     }
     else {
         EventDesc event_desc{.ts = ts,
@@ -108,10 +107,26 @@ std::string_view format(const EventDesc &event, bool newline)
 
     static char event_str[EVENT_STR_SIZE];
 
-    std::snprintf(event_str, EVENT_STR_SIZE, "{ts:%" PRIu64 ",event:%" PRIu8 ",task:%" PRIu16 ",prio:%" PRIu16 "}%s",
-                  event.ts, event.id, event.ctx.id, event.ctx.prio, newline ? "\n" : "");
+    std::snprintf(event_str, EVENT_STR_SIZE, "{ts:%" PRIu64 ",event:%" PRIu8 ",task:%" PRIu32 ",prio:%" PRIu32 "}%s",
+                  event.ts, event.id, static_cast<uint32_t>(event.ctx.id), static_cast<uint32_t>(event.ctx.prio),
+                  newline ? "\n" : "");
 
     return event_str;
+}
+
+std::string_view format(const MessageEventDesk &event, bool newline)
+{
+    static constexpr auto MSG_EVENT_STR_SIZE =
+        std::numeric_limits<decltype(event.ts)>::digits10 + std::numeric_limits<decltype(event.id)>::digits10 +
+        std::numeric_limits<decltype(event.ctx.id)>::digits10 + sizeof(event.ctx.msg) +
+        30 /* message body (braces, commas, etc) + null terminator */ + 5 /* just in case */;
+
+    static char msg_event_str[MSG_EVENT_STR_SIZE];
+
+    std::snprintf(msg_event_str, MSG_EVENT_STR_SIZE, "{ts:%" PRIu64 ",event:%" PRIu8 ",task:%" PRIu32 ",msg:\"%s\"}%s",
+                  event.ts, event.id, static_cast<uint32_t>(event.ctx.id), event.ctx.msg.data(), newline ? "\n" : "");
+
+    return msg_event_str;
 }
 
 }  // namespace event_tracer::freertos
