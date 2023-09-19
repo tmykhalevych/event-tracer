@@ -53,16 +53,16 @@ void EventTracer::register_event(Event event, std::optional<TaskHandle_t> task,
     const auto ts = timestamp.value_or(now());
     const auto tcb = task.value_or(xTaskGetCurrentTaskHandle());
     EventContext ctx = GLOBAL_CONTEXT;
+    TaskStatus_t info;
 
     if (tcb) {
-        TaskStatus_t info;
         vTaskGetInfo(tcb, &info, pdFALSE, eInvalid);
-
-        if (event == Event::TASK_DELETE) {
-            on_task_delete(info);
-        }
-
         ctx = {.id = static_cast<uint8_t>(info.xTaskNumber), .prio = static_cast<uint8_t>(info.uxCurrentPriority)};
+    }
+
+    // handle specific events differently
+    if (handle_specific(event, info)) {
+        return;
     }
 
     m_active_registry->add({.ts = ts, .id = to_underlying(event), .ctx = std::move(ctx)});
@@ -74,9 +74,24 @@ void EventTracer::notify_done(EventRegistry &registry)
     registry.reset();
 }
 
+bool EventTracer::handle_specific(Event event, const TaskStatus_t &info)
+{
+    switch (event) {
+        case Event::TASK_CREATE: on_task_create(info); return true;
+        case Event::TASK_DELETE: on_task_delete(info); return true;
+
+        default: return false;
+    }
+}
+
+void EventTracer::on_task_create(const TaskStatus_t &info)
+{
+    // TODO: implement
+}
+
 void EventTracer::on_task_delete(const TaskStatus_t &info)
 {
-    // TODO: add task name and id to cache
+    // TODO: implement
 }
 
 void EventTracer::on_registry_ready(EventRegistry &registry)

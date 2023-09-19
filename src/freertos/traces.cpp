@@ -15,47 +15,38 @@ extern "C"
 {
 #endif
 
-    void vTraceTaskCreate(void* xTask)
-    {
-        tracer().register_event(Event::TASK_CREATE, static_cast<TaskHandle_t>(xTask));
-    }
+    void trace_task_create(void* task) { tracer().register_event(Event::TASK_CREATE, static_cast<TaskHandle_t>(task)); }
 
-    void vTraceTaskDelete(void* xTask)
-    {
-        tracer().register_event(Event::TASK_DELETE, static_cast<TaskHandle_t>(xTask));
-    }
+    void trace_task_delete(void* task) { tracer().register_event(Event::TASK_DELETE, static_cast<TaskHandle_t>(task)); }
 
-    void vTraceTaskSwitchedIn(void* pxCurrentTCB)
+    void trace_task_switched_in(void* current_tcb)
     {
         const auto timestamp = tracer().now();
-        static void* pxPreviousTCB = nullptr;
-        if (pxPreviousTCB != pxCurrentTCB) {
-            tracer().register_event(Event::TASK_SWITCHED_IN, static_cast<TaskHandle_t>(pxCurrentTCB), timestamp);
-            pxPreviousTCB = pxCurrentTCB;
+        static void* previous_tcb = nullptr;
+        if (previous_tcb != current_tcb) {
+            tracer().register_event(Event::TASK_SWITCHED_IN, static_cast<TaskHandle_t>(current_tcb), timestamp);
+            previous_tcb = current_tcb;
         }
     }
 
-    void vTraceSystemTick(size_t uiTickCount)
+    void trace_system_tick(size_t tick_count)
     {
         // TODO: implement
     }
 
-    void vTraceMalloc([[maybe_unused]] void* pvAddress, [[maybe_unused]] size_t uiSize)
+    void trace_malloc([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
     {
         tracer().register_event(Event::MALLOC);
     }
 
-    void vTraceFree([[maybe_unused]] void* pvAddress, [[maybe_unused]] size_t uiSize)
-    {
-        tracer().register_event(Event::FREE);
-    }
+    void trace_free([[maybe_unused]] void* addr, [[maybe_unused]] size_t size) { tracer().register_event(Event::FREE); }
 
-    void vTracesInit(uint8_t* puBuff, size_t uxCapasity, uxGetTime* pfnGetSteadyTimestamp,
-                     xPrintTraces* pfnOutputMethod)
+    void traces_init(uint8_t* buff, size_t capacity, get_timestamp_cb_t* get_timestamp_cb,
+                     print_traces_cb_t* print_traces_cb)
     {
         struct EventTracerContext
         {
-            xPrintTraces* data_cb;
+            print_traces_cb_t* data_cb;
         };
 
         struct DataReadyMessage
@@ -98,13 +89,13 @@ extern "C"
             }
         };
 
-        static EventTracer tracer(reinterpret_cast<std::byte*>(puBuff), uxCapasity, data_ready_handler);
+        static EventTracer tracer(reinterpret_cast<std::byte*>(buff), capacity, data_ready_handler);
         EventTracer::set_single_instance(&tracer);
 
-        tracer.set_time_getter(pfnGetSteadyTimestamp);
+        tracer.set_time_getter(get_timestamp_cb);
         data_ready_queue = xQueueCreate(DATA_REGISTRY_QUEUE_SIZE, sizeof(DataReadyMessage));
 
-        static EventTracerContext context{.data_cb = pfnOutputMethod};
+        static EventTracerContext context{.data_cb = print_traces_cb};
         xTaskCreate(tracer_task, "event_tracer", configMINIMAL_STACK_SIZE, &context, (configTIMER_TASK_PRIORITY - 1),
                     nullptr);
     }

@@ -11,39 +11,39 @@ extern "C"
 {
 #endif
 
-    void vTraceTaskCreate(void *xTask);
-    void vTraceTaskDelete(void *xTask);
-    void vTraceTaskSwitchedIn(void *pxCurrentTCB);
-    void vTraceSystemTick(size_t uiTickCount);
-    void vTraceMalloc(void *pvAddress, size_t uiSize);
-    void vTraceFree(void *pvAddress, size_t uiSize);
+    void trace_task_create(void *task);
+    void trace_task_delete(void *task);
+    void trace_task_switched_in(void *current_tcb);
+    void trace_system_tick(size_t tick_count);
+    void trace_malloc(void *addr, size_t size);
+    void trace_free(void *addr, size_t size);
 
     /// @brief Alias for user-defined print function, to provide them with tracing results
-    typedef int xPrintTraces(const char *pszFormat, ...);
+    typedef int print_traces_cb_t(const char *format, ...);
 
     /// @brief Alias for user-defined time getter
-    typedef uint64_t uxGetTime(void);
+    typedef uint64_t get_timestamp_cb_t(void);
 
     /// @brief Initiates FreeRTOS event-tracer
-    /// @param puBuff Pointer to buffer made for storing actual tracing data
-    /// @param uxCapasity Capacity of the buffer made for storing actual tracing data
-    /// @param pfnGetSteadyTimestamp Pointer to function that allows to get steady timestamps
-    /// @param pfnOutputMethod User defined provider for tracing data
-    void vTracesInit(uint8_t *puBuff, size_t uxCapasity, uxGetTime *pfnGetSteadyTimestamp,
-                     xPrintTraces *pfnOutputMethod);
+    /// @param buff Pointer to buffer made for storing actual tracing data
+    /// @param capacity Capacity of the buffer made for storing actual tracing data
+    /// @param get_timestamp_cb Pointer to function that allows to get steady timestamps
+    /// @param print_traces_cb User defined provider for tracing data
+    void traces_init(uint8_t *buff, size_t capacity, get_timestamp_cb_t *get_timestamp_cb,
+                     print_traces_cb_t *print_traces_cb);
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
 #ifdef tracerUSE_TASK_TRACES
-// #define traceMOVED_TASK_TO_READY_STATE(xTask)
+// #define traceMOVED_TASK_TO_READY_STATE(task)
 // #define tracePOST_MOVED_TASK_TO_READY_STATE(pxTCB)
-#define traceTASK_CREATE(xTask) vTraceTaskCreate(xTask)
+#define traceTASK_CREATE(task) trace_task_create(task)
 // #define traceTASK_CREATE_FAILED(pxNewTCB)
 // #define traceTASK_DELAY()
 // #define traceTASK_DELAY_UNTIL()
-#define traceTASK_DELETE(xTask) vTraceTaskDelete(xTask)
+#define traceTASK_DELETE(task) trace_task_delete(task)
 // #define traceTASK_NOTIFY(uxIndexToNotify)
 // #define traceTASK_NOTIFY_FROM_ISR(uxIndexToNotify)
 // #define traceTASK_NOTIFY_GIVE_FROM_ISR(uxIndexToNotify)
@@ -53,16 +53,16 @@ extern "C"
 // #define traceTASK_NOTIFY_WAIT_BLOCK(uxIndexToWait)
 // #define traceTASK_PRIORITY_DISINHERIT(pxTCBOfMutexHolder, uxOriginalPriority)
 // #define traceTASK_PRIORITY_INHERIT(pxTCBOfMutexHolder, uxInheritedPriority)
-// #define traceTASK_PRIORITY_SET(xTask, uxNewPriority)
-// #define traceTASK_RESUME(xTask)
-// #define traceTASK_RESUME_FROM_ISR(xTask)
-// #define traceTASK_SUSPEND(xTask)
-#define traceTASK_SWITCHED_IN() vTraceTaskSwitchedIn(pxCurrentTCB)
+// #define traceTASK_PRIORITY_SET(task, uxNewPriority)
+// #define traceTASK_RESUME(task)
+// #define traceTASK_RESUME_FROM_ISR(task)
+// #define traceTASK_SUSPEND(task)
+#define traceTASK_SWITCHED_IN() trace_task_switched_in(pxCurrentTCB)
 // #define traceTASK_SWITCHED_OUT()
 #endif
 
 #ifdef tracerUSE_TASK_PERF
-#define traceTASK_INCREMENT_TICK(xTickCount) vTraceSystemTick((size_t)xTickCount)
+#define traceTASK_INCREMENT_TICK(tick_count) trace_system_tick((size_t)tick_count)
 #endif
 
 #ifdef tracerUSE_QUEUE_TRACES
@@ -85,8 +85,8 @@ extern "C"
 #endif
 
 #ifdef tracerUSE_ALLOC_TRACES
-#define traceMALLOC(pvAddress, uiSize) vTraceMalloc(pvAddress, uiSize)
-#define traceFREE(pvAddress, uiSize) vTraceFree(pvAddress, uiSize)
+#define traceMALLOC(addr, size) trace_malloc(addr, size)
+#define traceFREE(addr, size) trace_free(addr, size)
 #endif
 
 #ifdef tracerUSE_EGROUP_TRACES

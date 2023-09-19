@@ -23,7 +23,7 @@ int main()
         return duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count();
     };
 
-    vTracesInit(TRACES_BUFF, TRACES_BUFF_LEN, get_steady_time, printf);
+    traces_init(TRACES_BUFF, TRACES_BUFF_LEN, get_steady_time, printf);
 
     const auto task = [](void *) {
         std::random_device dev;

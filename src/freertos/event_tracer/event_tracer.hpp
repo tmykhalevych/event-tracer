@@ -55,6 +55,8 @@ private:
     void on_registry_ready(EventRegistry &registry);
     void notify_done(EventRegistry &registry);
 
+    bool handle_specific(Event event, const TaskStatus_t &info);
+    void on_task_create(const TaskStatus_t &info);
     void on_task_delete(const TaskStatus_t &info);
 
     EventRegistry *m_active_registry;
