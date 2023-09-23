@@ -10,10 +10,12 @@ namespace event_tracer::freertos
 EventTracer *EventTracer::m_single_instance = nullptr;
 static constexpr size_t MIN_REGISTRY_CAPACITY = 20;
 
-EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb, message_cb_t message_cb)
-    : m_data_ready_cb(data_ready_cb), m_message_cb(message_cb)
+EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb, message_cb_t message_cb,
+                         get_time_cb_t get_time_cb)
+    : m_data_ready_cb(data_ready_cb), m_message_cb(message_cb), m_get_time_cb(get_time_cb)
 {
     ET_ASSERT(buff);
+    ET_ASSERT(get_time_cb);
 
     const size_t registry_capacity = capacity / sizeof(EventDesc) / 2;
     EventDesc *registry_ptr = reinterpret_cast<EventDesc *>(buff);
@@ -25,10 +27,13 @@ EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_
 
     m_active_registry = &m_registries[0].emplace(Span(registry_ptr, registry_capacity));
     m_pending_registry = &m_registries[1].emplace(Span(registry_ptr + registry_capacity, registry_capacity));
+    m_first_ts = now();
 
     const auto ready_cb = [this](EventRegistry &registry) { on_registry_ready(registry); };
-    m_active_registry->set_ready_cb(ready_cb);
-    m_pending_registry->set_ready_cb(ready_cb);
+    for (auto &registry : m_registries) {
+        registry->set_ready_cb(ready_cb);
+        registry->set_start_timestamp(m_first_ts);
+    }
 }
 
 void EventTracer::set_single_instance(EventTracer *tracer)
@@ -43,11 +48,7 @@ EventTracer &EventTracer::get_single_instance()
     return *m_single_instance;
 }
 
-EventDesc::timestamp_t EventTracer::now() const
-{
-    ET_ASSERT(m_get_time_cb);
-    return m_get_time_cb();
-}
+EventDesc::timestamp_t EventTracer::now() const { return m_get_time_cb(); }
 
 void EventTracer::register_event(Event event, std::optional<TaskHandle_t> task,
                                  std::optional<EventDesc::timestamp_t> timestamp)
@@ -64,7 +65,7 @@ void EventTracer::register_event(Event event, std::optional<TaskHandle_t> task,
     // add task name for task lifetime event
     if (event == Event::TASK_CREATE || event == Event::TASK_DELETE) {
         MessageEventDesk msg_event_desc{
-            .ts = ts, .id = to_underlying(event), .ctx = {.id = static_cast<uint8_t>(info.xTaskNumber)}};
+            .ts = ts - m_first_ts, .id = to_underlying(event), .ctx = {.id = static_cast<uint8_t>(info.xTaskNumber)}};
 
         std::strncpy(msg_event_desc.ctx.msg.data(), info.pcTaskName, msg_event_desc.ctx.msg.max_size());
         m_message_cb(msg_event_desc);

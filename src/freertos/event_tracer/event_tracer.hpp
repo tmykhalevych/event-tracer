@@ -59,12 +59,12 @@ public:
     using get_time_cb_t = StaticFunction<EventDesc::timestamp_t()>;
     using message_cb_t = StaticFunction<void(const MessageEventDesk &)>;
 
-    EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb, message_cb_t message_cb);
+    EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb, message_cb_t message_cb,
+                get_time_cb_t get_time_cb);
 
     static void set_single_instance(EventTracer *tracer);
     [[nodiscard]] static EventTracer &get_single_instance();
 
-    void set_time_getter(get_time_cb_t cb) { m_get_time_cb = cb; }
     [[nodiscard]] EventDesc::timestamp_t now() const;
 
     void register_event(Event event, std::optional<TaskHandle_t> task = std::nullopt,
@@ -82,6 +82,8 @@ private:
     data_ready_cb_t m_data_ready_cb;
     get_time_cb_t m_get_time_cb;
     message_cb_t m_message_cb;
+
+    uint64_t m_first_ts;
 
     static EventTracer *m_single_instance;
 };
