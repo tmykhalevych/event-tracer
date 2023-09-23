@@ -2,7 +2,7 @@
 
 #include <assert.hpp>
 #include <error.hpp>
-#include <event_desc.hpp>
+#include <event.hpp>
 #include <span.hpp>
 #include <static_function.hpp>
 
@@ -13,23 +13,23 @@ namespace event_tracer
 {
 
 /// @brief Event registry collection
-/// @tparam ED Event descriptor concrete type
+/// @tparam E Event descriptor concrete type
 /// @warning Not MT-safe
-template <typename ED>
+template <typename E>
 class EventRegistry
 {
 public:
-    using event_desc_t = ED;
-    using ready_cb_t = StaticFunction<void(EventRegistry<event_desc_t>&)>;
+    using event_t = E;
+    using ready_cb_t = StaticFunction<void(EventRegistry<event_t>&)>;
 
-    explicit EventRegistry(Span<event_desc_t> buff);
+    explicit EventRegistry(Span<event_t> buff);
     ~EventRegistry();
 
-    void add(event_desc_t event);
+    void add(event_t event);
     void reset(bool hard = false);
 
-    const event_desc_t* begin() const { return m_begin; }
-    const event_desc_t* end() const { return m_next; }
+    const event_t* begin() const { return m_begin; }
+    const event_t* end() const { return m_next; }
 
     [[nodiscard]] bool empty() const { return m_next == m_begin; }
 
@@ -44,8 +44,8 @@ public:
 private:
     const size_t m_capacity;
 
-    event_desc_t* m_begin;
-    event_desc_t* m_next;
+    event_t* m_begin;
+    event_t* m_next;
 
     std::optional<uint64_t> m_first_ts;
     ready_cb_t m_ready_cb;
@@ -54,7 +54,7 @@ private:
 };
 
 template <typename ED>
-EventRegistry<ED>::EventRegistry(Span<event_desc_t> buff) : m_capacity(buff.size), m_begin(buff.data), m_next(m_begin)
+EventRegistry<ED>::EventRegistry(Span<event_t> buff) : m_capacity(buff.size), m_begin(buff.data), m_next(m_begin)
 {
     ET_ASSERT(buff);
 }
@@ -66,7 +66,7 @@ EventRegistry<ED>::~EventRegistry()
 }
 
 template <typename ED>
-void EventRegistry<ED>::add(event_desc_t event)
+void EventRegistry<ED>::add(event_t event)
 {
     if (!m_first_ts) {
         m_first_ts = static_cast<uint64_t>(event.ts);
@@ -76,7 +76,7 @@ void EventRegistry<ED>::add(event_desc_t event)
         return;
     }
 
-    const event_desc_t* end = m_begin + m_capacity;
+    const event_t* end = m_begin + m_capacity;
     if (m_next == end) {
         ET_ERROR("Buffer full, please reset before use");
         return;

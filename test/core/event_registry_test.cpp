@@ -1,10 +1,10 @@
-#include <gtest/gtest.h>
 #include <error_assert_impl.hpp>
 #include <event_registry.hpp>
+#include <gtest/gtest.h>
 
 #include <iterator>
 
-using TestEventDesc = event_tracer::EventDesc<>;
+using TestEventDesc = event_tracer::Event<>;
 using TestEventRegistry = event_tracer::EventRegistry<TestEventDesc>;
 
 namespace event_tracer
@@ -22,7 +22,7 @@ private:
     const TestEventRegistry& m_registry;
 };
 
-} // namespace event_tracer
+}  // namespace event_tracer
 
 using event_tracer::EventRegistryTester;
 
@@ -60,7 +60,7 @@ TEST(EventRegistry, Add)
     EXPECT_FALSE(registry.empty());
 
     bool cb_called = false;
-    registry.set_ready_cb([&cb_called, &registry](TestEventRegistry& ptr){
+    registry.set_ready_cb([&cb_called, &registry](TestEventRegistry& ptr) {
         cb_called = true;
         EXPECT_EQ(&registry, &ptr);
     });

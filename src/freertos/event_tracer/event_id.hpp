@@ -1,12 +1,12 @@
 #pragma once
 
-#include <event_desc.hpp>
+#include <event.hpp>
 
 namespace event_tracer::freertos
 {
 
 /// @brief User tracing events enumeration
-enum class UserEvent : event_tracer::EventDesc<>::id_t
+enum class UserEventId : event_tracer::Event<>::id_t
 {
     UNDEFINED = 0,
     // user defined events
@@ -20,9 +20,9 @@ enum class UserEvent : event_tracer::EventDesc<>::id_t
 };
 
 /// @brief FreeRTOS tracing events enumeration
-enum class FreertosEvent : event_tracer::EventDesc<>::id_t
+enum class FreertosEventId : event_tracer::Event<>::id_t
 {
-    UNDEFINED = to_underlying(UserEvent::LAST),
+    UNDEFINED = to_underlying(UserEventId::LAST),
     // task events
     TASK_MOVED_TO_READY_STATE,
     TASK_POST_MOVED_TO_READY_STATE,

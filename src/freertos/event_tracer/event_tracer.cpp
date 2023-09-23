@@ -17,8 +17,8 @@ EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_
     ET_ASSERT(buff);
     ET_ASSERT(get_time_cb);
 
-    const size_t registry_capacity = capacity / sizeof(EventDesc) / 2;
-    EventDesc *registry_ptr = reinterpret_cast<EventDesc *>(buff);
+    const size_t registry_capacity = capacity / sizeof(Event) / 2;
+    Event *registry_ptr = reinterpret_cast<Event *>(buff);
 
     ET_ASSERT(registry_capacity > 1);
     if (registry_capacity < MIN_REGISTRY_CAPACITY) {
@@ -48,10 +48,10 @@ EventTracer &EventTracer::get_single_instance()
     return *m_single_instance;
 }
 
-EventDesc::timestamp_t EventTracer::now() const { return m_get_time_cb(); }
+Event::timestamp_t EventTracer::now() const { return m_get_time_cb(); }
 
-void EventTracer::register_event(FreertosEvent event, std::optional<TaskHandle_t> task,
-                                 std::optional<EventDesc::timestamp_t> timestamp)
+void EventTracer::register_event(FreertosEventId event, std::optional<TaskHandle_t> task,
+                                 std::optional<Event::timestamp_t> timestamp)
 {
     const auto ts = timestamp.value_or(now());
     const auto tcb = task.value_or(xTaskGetCurrentTaskHandle());
@@ -63,18 +63,18 @@ void EventTracer::register_event(FreertosEvent event, std::optional<TaskHandle_t
     }
 
     // add task name for task lifetime event
-    if (event == FreertosEvent::TASK_CREATE || event == FreertosEvent::TASK_DELETE) {
-        MessageEventDesk msg_event_desc{
+    if (event == FreertosEventId::TASK_CREATE || event == FreertosEventId::TASK_DELETE) {
+        MsgEvent msg_event_desc{
             .ts = ts - m_first_ts, .id = to_underlying(event), .ctx = {.id = static_cast<uint8_t>(info.xTaskNumber)}};
 
         std::strncpy(msg_event_desc.ctx.msg.data(), info.pcTaskName, msg_event_desc.ctx.msg.max_size());
         m_message_cb(msg_event_desc);
     }
     else {
-        EventDesc event_desc{.ts = ts,
-                             .id = to_underlying(event),
-                             .ctx = {.id = static_cast<uint8_t>(info.xTaskNumber),
-                                     .prio = static_cast<uint8_t>(info.uxCurrentPriority)}};
+        Event event_desc{.ts = ts,
+                         .id = to_underlying(event),
+                         .ctx = {.id = static_cast<uint8_t>(info.xTaskNumber),
+                                 .prio = static_cast<uint8_t>(info.uxCurrentPriority)}};
 
         m_active_registry->add(std::move(event_desc));
     }
@@ -98,7 +98,7 @@ void EventTracer::on_registry_ready(EventRegistry &registry)
     m_data_ready_cb(*m_pending_registry, [this, &registry = *m_pending_registry] { notify_done(registry); });
 }
 
-std::string_view format(const EventDesc &event, bool newline)
+std::string_view format(const Event &event, bool newline)
 {
     static constexpr auto EVENT_STR_SIZE =
         std::numeric_limits<decltype(event.ts)>::digits10 + std::numeric_limits<decltype(event.id)>::digits10 +
@@ -115,7 +115,7 @@ std::string_view format(const EventDesc &event, bool newline)
     return event_str;
 }
 
-std::string_view format(const MessageEventDesk &event, bool newline)
+std::string_view format(const MsgEvent &event, bool newline)
 {
     static constexpr auto MSG_EVENT_STR_SIZE =
         std::numeric_limits<decltype(event.ts)>::digits10 + std::numeric_limits<decltype(event.id)>::digits10 +

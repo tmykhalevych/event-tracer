@@ -1,6 +1,6 @@
+#include <cinttypes>
 #include <event_registry.hpp>
 #include <iostream>
-#include <cinttypes>
 
 struct TaskContext
 {
@@ -8,17 +8,16 @@ struct TaskContext
     uint8_t prio;
 };
 
-using TaskEventDesc = event_tracer::EventDesc<TaskContext>;
+using TaskEventDesc = event_tracer::Event<TaskContext>;
 
 int main()
 {
     event_tracer::EventRegistry<TaskEventDesc> registry(4);
 
-    registry.set_ready_cb([](auto& events){
+    registry.set_ready_cb([](auto& events) {
         std::cout << "Dumping events : ";
 
-        for (auto& event : events)
-            std::cout << std::to_string(event.id);
+        for (auto& event : events) std::cout << std::to_string(event.id);
 
         std::cout << std::endl;
     });

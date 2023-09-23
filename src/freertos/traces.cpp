@@ -17,12 +17,12 @@ extern "C"
 
     void trace_task_create(void* task)
     {
-        tracer().register_event(FreertosEvent::TASK_CREATE, static_cast<TaskHandle_t>(task));
+        tracer().register_event(FreertosEventId::TASK_CREATE, static_cast<TaskHandle_t>(task));
     }
 
     void trace_task_delete(void* task)
     {
-        tracer().register_event(FreertosEvent::TASK_DELETE, static_cast<TaskHandle_t>(task));
+        tracer().register_event(FreertosEventId::TASK_DELETE, static_cast<TaskHandle_t>(task));
     }
 
     void trace_task_switched_in(void* current_tcb)
@@ -30,7 +30,8 @@ extern "C"
         const auto timestamp = tracer().now();
         static void* previous_tcb = nullptr;
         if (previous_tcb != current_tcb) {
-            tracer().register_event(FreertosEvent::TASK_SWITCHED_IN, static_cast<TaskHandle_t>(current_tcb), timestamp);
+            tracer().register_event(FreertosEventId::TASK_SWITCHED_IN, static_cast<TaskHandle_t>(current_tcb),
+                                    timestamp);
             previous_tcb = current_tcb;
         }
     }
@@ -42,12 +43,12 @@ extern "C"
 
     void trace_malloc([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
     {
-        tracer().register_event(FreertosEvent::MALLOC);
+        tracer().register_event(FreertosEventId::MALLOC);
     }
 
     void trace_free([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
     {
-        tracer().register_event(FreertosEvent::FREE);
+        tracer().register_event(FreertosEventId::FREE);
     }
 
     void traces_init(TracesSettings settings)
@@ -97,7 +98,7 @@ extern "C"
 
         static EventTracerContext context{.data_cb = settings.print_traces_cb};
 
-        const auto msg_handler = [](const MessageEventDesk& msg_event) {
+        const auto msg_handler = [](const MsgEvent& msg_event) {
             ET_ASSERT(context.data_cb);
             context.data_cb(format(msg_event).data());
         };

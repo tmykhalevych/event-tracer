@@ -7,7 +7,7 @@
 #include <optional>
 #include <string_view>
 
-#include <event.hpp>
+#include <event_id.hpp>
 #include <event_registry.hpp>
 #include <static_function.hpp>
 
@@ -32,8 +32,8 @@ struct EventContext
 /// @brief Global context constant
 static constexpr EventContext GLOBAL_CONTEXT{.id = 0, .prio = 0};
 
-using EventDesc = event_tracer::EventDesc<EventContext>;
-using EventRegistry = event_tracer::EventRegistry<EventDesc>;
+using Event = event_tracer::Event<EventContext>;
+using EventRegistry = event_tracer::EventRegistry<Event>;
 
 /// @brief Max event message length (including terminal zero)
 static constexpr size_t MAX_EVENT_MESSAGE_LEN = tracerMAX_EVENT_MESSAGE_LEN;
@@ -48,7 +48,7 @@ struct MessageEventContext
     message_t msg;
 };
 
-using MessageEventDesk = event_tracer::EventDesc<MessageEventContext>;
+using MsgEvent = event_tracer::Event<MessageEventContext>;
 
 /// @brief FreeRTOS event tracer implementation
 class EventTracer
@@ -56,8 +56,8 @@ class EventTracer
 public:
     using data_done_cb_t = StaticFunction<void()>;
     using data_ready_cb_t = StaticFunction<void(EventRegistry &, data_done_cb_t)>;
-    using get_time_cb_t = StaticFunction<EventDesc::timestamp_t()>;
-    using message_cb_t = StaticFunction<void(const MessageEventDesk &)>;
+    using get_time_cb_t = StaticFunction<Event::timestamp_t()>;
+    using message_cb_t = StaticFunction<void(const MsgEvent &)>;
 
     EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb, message_cb_t message_cb,
                 get_time_cb_t get_time_cb);
@@ -65,10 +65,10 @@ public:
     static void set_single_instance(EventTracer *tracer);
     [[nodiscard]] static EventTracer &get_single_instance();
 
-    [[nodiscard]] EventDesc::timestamp_t now() const;
+    [[nodiscard]] Event::timestamp_t now() const;
 
-    void register_event(FreertosEvent event, std::optional<TaskHandle_t> task = std::nullopt,
-                        std::optional<EventDesc::timestamp_t> timestamp = std::nullopt);
+    void register_event(FreertosEventId event, std::optional<TaskHandle_t> task = std::nullopt,
+                        std::optional<Event::timestamp_t> timestamp = std::nullopt);
 
 private:
     void on_registry_ready(EventRegistry &registry);
@@ -96,12 +96,12 @@ private:
 /// @param event Event to format
 /// @param newline Indicator for adding newline character at the end of string
 /// @return Formatted event as a string_view
-[[nodiscard]] std::string_view format(const EventDesc &event, bool newline = true);
+[[nodiscard]] std::string_view format(const Event &event, bool newline = true);
 
 /// @brief Message event string formatter
 /// @param event Event to format
 /// @param newline Indicator for adding newline character at the end of string
 /// @return Formatted event as a string_view
-[[nodiscard]] std::string_view format(const MessageEventDesk &event, bool newline = true);
+[[nodiscard]] std::string_view format(const MsgEvent &event, bool newline = true);
 
 }  // namespace event_tracer::freertos

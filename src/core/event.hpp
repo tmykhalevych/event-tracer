@@ -9,11 +9,11 @@ namespace event_tracer
 /// @brief Basic event descriptor
 /// @tparam CT Context concrete type
 template <typename CT = int16_t>
-struct EventDesc
+struct Event
 {
     using timestamp_t = uint64_t;
-    using context_t = CT;
     using id_t = uint8_t;
+    using context_t = CT;
 
     timestamp_t ts : 40;
     id_t id;
