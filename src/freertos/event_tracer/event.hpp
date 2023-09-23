@@ -20,7 +20,7 @@ enum class UserEvent : event_tracer::EventDesc<>::id_t
 };
 
 /// @brief FreeRTOS tracing events enumeration
-enum class Event : event_tracer::EventDesc<>::id_t
+enum class FreertosEvent : event_tracer::EventDesc<>::id_t
 {
     UNDEFINED = to_underlying(UserEvent::LAST),
     // task events

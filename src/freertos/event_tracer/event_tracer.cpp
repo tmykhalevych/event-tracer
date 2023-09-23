@@ -50,7 +50,7 @@ EventTracer &EventTracer::get_single_instance()
 
 EventDesc::timestamp_t EventTracer::now() const { return m_get_time_cb(); }
 
-void EventTracer::register_event(Event event, std::optional<TaskHandle_t> task,
+void EventTracer::register_event(FreertosEvent event, std::optional<TaskHandle_t> task,
                                  std::optional<EventDesc::timestamp_t> timestamp)
 {
     const auto ts = timestamp.value_or(now());
@@ -63,7 +63,7 @@ void EventTracer::register_event(Event event, std::optional<TaskHandle_t> task,
     }
 
     // add task name for task lifetime event
-    if (event == Event::TASK_CREATE || event == Event::TASK_DELETE) {
+    if (event == FreertosEvent::TASK_CREATE || event == FreertosEvent::TASK_DELETE) {
         MessageEventDesk msg_event_desc{
             .ts = ts - m_first_ts, .id = to_underlying(event), .ctx = {.id = static_cast<uint8_t>(info.xTaskNumber)}};
 

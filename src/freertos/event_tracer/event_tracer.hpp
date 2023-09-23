@@ -67,7 +67,7 @@ public:
 
     [[nodiscard]] EventDesc::timestamp_t now() const;
 
-    void register_event(Event event, std::optional<TaskHandle_t> task = std::nullopt,
+    void register_event(FreertosEvent event, std::optional<TaskHandle_t> task = std::nullopt,
                         std::optional<EventDesc::timestamp_t> timestamp = std::nullopt);
 
 private:
