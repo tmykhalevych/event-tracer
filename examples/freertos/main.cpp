@@ -13,7 +13,7 @@ static constexpr std::pair<int, int> TASK_SLEEP_RANGE_MS = {100, 500};
 static constexpr auto TASK_NUM = 5;
 static constexpr auto TASK_NAME_BASE = "task #";
 static constexpr auto DATA_REGISTRY_QUEUE_SIZE = 2;
-static constexpr auto TRACES_BUFF_LEN = 200 * sizeof(uint64_t);
+static constexpr auto TRACES_BUFF_LEN = 0x800;  // 2K
 static uint8_t TRACES_BUFF[TRACES_BUFF_LEN];
 
 int main()
