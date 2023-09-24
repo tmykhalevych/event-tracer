@@ -3,6 +3,7 @@
 #include <assert.hpp>
 #include <error.hpp>
 #include <event.hpp>
+#include <prohibit_copy_move.hpp>
 #include <span.hpp>
 #include <static_function.hpp>
 
@@ -16,7 +17,7 @@ namespace event_tracer
 /// @tparam E Event descriptor concrete type
 /// @warning Not MT-safe
 template <typename E>
-class EventRegistry
+class EventRegistry : public ProhibitCopy
 {
 public:
     using event_t = E;
@@ -42,7 +43,7 @@ public:
     void set_start_timestamp(uint64_t ts) { m_first_ts = ts; }
 
 private:
-    const size_t m_capacity;
+    size_t m_capacity;
 
     event_t* m_begin;
     event_t* m_next;

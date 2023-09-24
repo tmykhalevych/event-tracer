@@ -8,6 +8,8 @@
 
 #ifndef tracerMAX_EVENT_MESSAGE_LEN
 #define tracerMAX_EVENT_MESSAGE_LEN configMAX_TASK_NAME_LEN
+#else
+static_assert(tracerMAX_EVENT_MESSAGE_LEN >= configMAX_TASK_NAME_LEN);
 #endif
 
 #ifndef tracerTASK_ID_TYPE

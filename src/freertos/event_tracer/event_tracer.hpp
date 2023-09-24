@@ -9,70 +9,62 @@
 
 #include <event_id.hpp>
 #include <event_registry.hpp>
+#include <prohibit_copy_move.hpp>
+#include <singleton.hpp>
 #include <static_function.hpp>
 
 #include <FreeRTOS.h>
 #include <task.h>
 
 #include <array>
+#include <variant>
 
 namespace event_tracer::freertos
 {
 
+/// @brief Max event message length (including terminal zero)
+static constexpr size_t MAX_EVENT_MESSAGE_LEN = tracerMAX_EVENT_MESSAGE_LEN;
+
 using task_id_t = tracerTASK_ID_TYPE;
 using task_prio_t = tracerTASK_PRIO_TYPE;
+using message_t = std::array<char, MAX_EVENT_MESSAGE_LEN>;
 
-/// @brief FreeRTOS event context
-struct EventContext
+/// @brief Marker for the events came from non-FreeRTOS context
+enum class ContextMarker
 {
-    task_id_t id;
-    task_prio_t prio;
+    GLOBAL
 };
 
-/// @brief Global context constant
-static constexpr EventContext GLOBAL_CONTEXT{.id = 0, .prio = 0};
+/// @brief Context of FreeRTOS event
+struct EventContext
+{
+    task_id_t task_id;
+    std::variant<task_prio_t, message_t, ContextMarker> info;
+};
 
 using Event = event_tracer::Event<EventContext>;
 using EventRegistry = event_tracer::EventRegistry<Event>;
 
-/// @brief Max event message length (including terminal zero)
-static constexpr size_t MAX_EVENT_MESSAGE_LEN = tracerMAX_EVENT_MESSAGE_LEN;
-static_assert(MAX_EVENT_MESSAGE_LEN >= configMAX_TASK_NAME_LEN);
-
-using message_t = std::array<char, MAX_EVENT_MESSAGE_LEN>;
-
-/// @brief FreeRTOS event context with additional message
-struct MessageEventContext
-{
-    task_id_t id;
-    message_t msg;
-};
-
-using MsgEvent = event_tracer::Event<MessageEventContext>;
-
 /// @brief FreeRTOS event tracer implementation
-class EventTracer
+class EventTracer : public ProhibitCopyMove
 {
 public:
     using data_done_cb_t = StaticFunction<void()>;
     using data_ready_cb_t = StaticFunction<void(EventRegistry &, data_done_cb_t)>;
     using get_time_cb_t = StaticFunction<Event::timestamp_t()>;
-    using message_cb_t = StaticFunction<void(const MsgEvent &)>;
 
-    EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb, message_cb_t message_cb,
-                get_time_cb_t get_time_cb);
+    EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb, get_time_cb_t get_time_cb);
 
-    static void set_single_instance(EventTracer *tracer);
-    [[nodiscard]] static EventTracer &get_single_instance();
-
-    [[nodiscard]] Event::timestamp_t now() const;
-
-    void register_event(FreertosEventId event, std::optional<TaskHandle_t> task = std::nullopt,
+    void register_event(EventId id, std::optional<TaskHandle_t> task = std::nullopt,
                         std::optional<Event::timestamp_t> timestamp = std::nullopt);
+
+    [[nodiscard]] Event::timestamp_t now() const { return m_get_time_cb(); }
 
 private:
     void on_registry_ready(EventRegistry &registry);
     void notify_done(EventRegistry &registry);
+
+    constexpr bool needs_message(EventId id);
 
     EventRegistry *m_active_registry;
     EventRegistry *m_pending_registry;
@@ -81,27 +73,20 @@ private:
 
     data_ready_cb_t m_data_ready_cb;
     get_time_cb_t m_get_time_cb;
-    message_cb_t m_message_cb;
 
     uint64_t m_first_ts;
-
-    static EventTracer *m_single_instance;
 };
+
+using SingleEventTracer = Singleton<EventTracer>;
 
 /// @brief Short alias to access global event tracer
 /// @return Reference to event tracer single instance
-[[nodiscard]] inline EventTracer &tracer() { return EventTracer::get_single_instance(); }
+[[nodiscard]] inline EventTracer &tracer() { return SingleEventTracer::instance(); }
 
 /// @brief Event string formatter
 /// @param event Event to format
 /// @param newline Indicator for adding newline character at the end of string
 /// @return Formatted event as a string_view
-[[nodiscard]] std::string_view format(const Event &event, bool newline = true);
-
-/// @brief Message event string formatter
-/// @param event Event to format
-/// @param newline Indicator for adding newline character at the end of string
-/// @return Formatted event as a string_view
-[[nodiscard]] std::string_view format(const MsgEvent &event, bool newline = true);
+[[nodiscard]] std::string_view format(const Event &e, bool newline = true);
 
 }  // namespace event_tracer::freertos

@@ -5,8 +5,8 @@
 namespace event_tracer::freertos
 {
 
-/// @brief User tracing events enumeration
-enum class UserEventId : event_tracer::Event<>::id_t
+/// @brief Tracing events enumeration
+enum class EventId : event_tracer::Event<>::id_t
 {
     UNDEFINED = 0,
     // user defined events
@@ -15,14 +15,6 @@ enum class UserEventId : event_tracer::Event<>::id_t
     EVENT_USER_3,
     EVENT_USER_4,
     EVENT_USER_5,
-    // end
-    LAST
-};
-
-/// @brief FreeRTOS tracing events enumeration
-enum class FreertosEventId : event_tracer::Event<>::id_t
-{
-    UNDEFINED = to_underlying(UserEventId::LAST),
     // task events
     TASK_MOVED_TO_READY_STATE,
     TASK_POST_MOVED_TO_READY_STATE,
