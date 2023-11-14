@@ -5,6 +5,7 @@
 
 #define configUSE_TRACE_FACILITY 1
 #define INCLUDE_xTaskGetCurrentTaskHandle 1
+#define INCLUDE_vTaskSuspend 1
 
 #ifndef tracerMAX_EVENT_MESSAGE_LEN
 #define tracerMAX_EVENT_MESSAGE_LEN configMAX_TASK_NAME_LEN
@@ -18,6 +19,10 @@ static_assert(tracerMAX_EVENT_MESSAGE_LEN >= configMAX_TASK_NAME_LEN);
 
 #ifndef tracerTASK_PRIO_TYPE
 #define tracerTASK_PRIO_TYPE decltype(TaskStatus_t::uxCurrentPriority)
+#endif
+
+#ifndef tracerTASK_NAME
+#define tracerTASK_NAME "event_tracer"
 #endif
 
 #ifdef __cplusplus
@@ -51,6 +56,8 @@ extern "C"
         print_traces_cb_t *print_traces_cb;
         /// The size for the data traces queue, 2 is minimal value, that should be enough
         int data_queue_size;
+        /// Data traces queue polling interval
+        size_t polling_interval_ms;
     } TracesSettings;
 
     /// @brief Initiates FreeRTOS event-tracer

@@ -9,9 +9,9 @@
 
 #include <event_id.hpp>
 #include <event_registry.hpp>
+#include <inplace_function.hpp>
 #include <prohibit_copy_move.hpp>
 #include <singleton.hpp>
-#include <static_function.hpp>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -49,9 +49,9 @@ using EventRegistry = event_tracer::EventRegistry<Event>;
 class EventTracer : public ProhibitCopyMove
 {
 public:
-    using data_done_cb_t = StaticFunction<void()>;
-    using data_ready_cb_t = StaticFunction<void(EventRegistry &, data_done_cb_t)>;
-    using get_time_cb_t = StaticFunction<Event::timestamp_t()>;
+    using data_done_cb_t = InplaceFunction<void()>;
+    using data_ready_cb_t = InplaceFunction<void(EventRegistry &, data_done_cb_t)>;
+    using get_time_cb_t = InplaceFunction<Event::timestamp_t()>;
 
     EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb, get_time_cb_t get_time_cb);
 

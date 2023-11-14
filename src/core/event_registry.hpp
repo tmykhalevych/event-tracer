@@ -3,9 +3,9 @@
 #include <assert.hpp>
 #include <error.hpp>
 #include <event.hpp>
+#include <inplace_function.hpp>
 #include <prohibit_copy_move.hpp>
 #include <span.hpp>
-#include <static_function.hpp>
 
 #include <cstdint>
 #include <optional>
@@ -21,7 +21,7 @@ class EventRegistry : public ProhibitCopy
 {
 public:
     using event_t = E;
-    using ready_cb_t = StaticFunction<void(EventRegistry<event_t>&)>;
+    using ready_cb_t = InplaceFunction<void(EventRegistry<event_t>&)>;
 
     explicit EventRegistry(Span<event_t> buff);
     ~EventRegistry();

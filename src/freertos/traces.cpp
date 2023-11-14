@@ -55,6 +55,7 @@ extern "C"
         struct EventTracerContext
         {
             print_traces_cb_t* data_cb;
+            size_t polling_interval_ms;
         };
 
         struct DataReadyMessage
@@ -70,39 +71,42 @@ extern "C"
             ET_ASSERT(context);
             ET_ASSERT(data_ready_queue);
 
-            auto& callbacks = *reinterpret_cast<EventTracerContext*>(context);
+            auto& ctx = *reinterpret_cast<EventTracerContext*>(context);
             DataReadyMessage msg;
 
             while (true) {
-                if (xQueueReceive(data_ready_queue, &msg, portMAX_DELAY)) {
+                while (xQueueReceive(data_ready_queue, &msg, 0)) {
                     ET_ASSERT(msg.registry);
                     for (const auto& event : *msg.registry) {
-                        callbacks.data_cb(format(event).data());
+                        ctx.data_cb(format(event).data());
                     }
                     // notify event tracer that we're done handling the data
                     msg.done_cb();
                 }
+                vTaskDelay(ctx.polling_interval_ms / portTICK_PERIOD_MS);
             }
         };
 
         const auto data_ready_handler = [](EventRegistry& registry, EventTracer::data_done_cb_t done_cb) {
             ET_ASSERT(data_ready_queue);
 
-            DataReadyMessage msg{.registry = &registry, .done_cb = done_cb};
+            DataReadyMessage msg{.registry = &registry, .done_cb = std::move(done_cb)};
 
             if (xQueueSend(data_ready_queue, &msg, 0 /* don't wait */) != pdPASS) {
                 ET_ERROR("Failed to send tracing data");
             }
         };
 
-        static EventTracerContext context{.data_cb = settings.print_traces_cb};
+        static EventTracerContext context{.data_cb = settings.print_traces_cb,
+                                          .polling_interval_ms = settings.polling_interval_ms};
 
         SingleEventTracer::emplace(reinterpret_cast<std::byte*>(settings.buff), settings.capacity, data_ready_handler,
                                    settings.get_timestamp_cb);
 
         data_ready_queue = xQueueCreate(settings.data_queue_size, sizeof(DataReadyMessage));
+        ET_ASSERT(data_ready_queue);
 
-        xTaskCreate(tracer_task, "event_tracer", configMINIMAL_STACK_SIZE, &context, (configTIMER_TASK_PRIORITY - 1),
+        xTaskCreate(tracer_task, tracerTASK_NAME, configMINIMAL_STACK_SIZE, &context, (configTIMER_TASK_PRIORITY - 1),
                     nullptr);
     }
 
