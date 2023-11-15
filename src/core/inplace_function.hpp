@@ -12,6 +12,15 @@
 namespace event_tracer
 {
 
+/// @brief Default callable object size for InplaceFunction
+static constexpr auto DEFAULT_CALLABLE_SIZE = 4 * sizeof(void *);
+
+/// @brief Simple callable type wrapper. Designed to be used instead of std::function. Does zero heap allocations.
+/// @tparam F Callable object invocation signature, e.g. void(int)
+/// @tparam Capacity Max size of internal buffer for storing callable object. Default is (4 * pointer size)
+template <typename F, size_t Capacity = DEFAULT_CALLABLE_SIZE>
+class InplaceFunction;
+
 namespace details
 {
 
@@ -68,26 +77,6 @@ struct VTable : public ProhibitCopyMove
 template <typename TRet, typename... TArgs>
 inline constexpr VTable<TRet, TArgs...> empty_vtable{};
 
-template <size_t DstCapacity, size_t SrcCapacity>
-struct is_sufficient_dst : std::true_type
-{
-    static_assert(DstCapacity >= SrcCapacity, "Destination storage capacity is insufficient");
-};
-
-}  // namespace details
-
-/// @brief Default callable object size for InplaceFunction
-static constexpr auto DEFAULT_CALLABLE_SIZE = 4 * sizeof(void *);
-
-/// @brief Simple callable type wrapper. Designed to be used instead of std::function. Does zero heap allocations.
-/// @tparam F Callable object invocation signature, e.g. void(int)
-/// @tparam Capacity Max size of internal buffer for storing callable object. Default is (4 * pointer size)
-template <typename F, size_t Capacity = DEFAULT_CALLABLE_SIZE>
-class InplaceFunction;
-
-namespace details
-{
-
 template <typename>
 struct is_inplace_function : std::false_type
 {
@@ -103,22 +92,22 @@ template <typename TRet, typename... TArgs, size_t Capacity>
 class InplaceFunction<TRet(TArgs...), Capacity>
 {
 public:
-    InplaceFunction() : m_vtable_ptr(std::addressof(details::empty_vtable<TRet, TArgs...>)) {}
+    InplaceFunction() : m_vtable_ptr(addressof_empy_vtable()) {}
     InplaceFunction(nullptr_t) : InplaceFunction() {}
 
     template <size_t OtherCapacity>
-    InplaceFunction(const InplaceFunction<TRet(TArgs...), OtherCapacity> &other)
-        : InplaceFunction(other.m_vtable_ptr, other.m_vtable_ptr->copy_ptr, std::addressof(other.m_storage))
+    InplaceFunction(const InplaceFunction<TRet(TArgs...), OtherCapacity> &other) : m_vtable_ptr(other.vtable_ptr)
     {
-        static_assert(details::is_sufficient_dst<Capacity, OtherCapacity>::value, "Insufficient capacity");
+        static_assert(Capacity >= OtherCapacity, "Insufficient capacity");
+        m_vtable_ptr->copy(std::addressof(m_storage), other.m_storage);
     }
 
     template <size_t OtherCapacity>
     InplaceFunction(InplaceFunction<TRet(TArgs...), OtherCapacity> &&other)
-        : InplaceFunction(other.m_vtable_ptr, other.m_vtable_ptr->move, std::addressof(other.m_storage))
+        : m_vtable_ptr(std::exchange(other.m_vtable_ptr, addressof_empy_vtable()))
     {
-        static_assert(details::is_sufficient_dst<Capacity, OtherCapacity>::value, "Insufficient capacity");
-        other.m_vtable_ptr = std::addressof(details::empty_vtable<TRet, TArgs...>);
+        static_assert(Capacity >= OtherCapacity, "Insufficient capacity");
+        m_vtable_ptr->move(std::addressof(m_storage), other.m_storage);
     }
 
     InplaceFunction(const InplaceFunction &other) : m_vtable_ptr(other.m_vtable_ptr)
@@ -126,8 +115,7 @@ public:
         m_vtable_ptr->copy(std::addressof(m_storage), std::addressof(other.m_storage));
     }
 
-    InplaceFunction(InplaceFunction &&other)
-        : m_vtable_ptr(std::exchange(other.m_vtable_ptr, std::addressof(details::empty_vtable<TRet, TArgs...>)))
+    InplaceFunction(InplaceFunction &&other) : m_vtable_ptr(std::exchange(other.m_vtable_ptr, addressof_empy_vtable()))
     {
         m_vtable_ptr->move(std::addressof(m_storage), std::addressof(other.m_storage));
     }
@@ -135,15 +123,14 @@ public:
     InplaceFunction &operator=(nullptr_t)
     {
         m_vtable_ptr->destruct(std::addressof(m_storage));
-        m_vtable_ptr = std::addressof(details::empty_vtable<TRet, TArgs...>);
+        m_vtable_ptr = addressof_empy_vtable();
         return *this;
     }
 
     InplaceFunction &operator=(InplaceFunction other)
     {
         m_vtable_ptr->destruct(std::addressof(m_storage));
-
-        m_vtable_ptr = std::exchange(other.m_vtable_ptr, std::addressof(details::empty_vtable<TRet, TArgs...>));
+        m_vtable_ptr = std::exchange(other.m_vtable_ptr, addressof_empy_vtable());
         m_vtable_ptr->move(std::addressof(m_storage), std::addressof(other.m_storage));
         return *this;
     }
@@ -153,10 +140,10 @@ public:
                                           std::is_invocable_r<TRet, Callable &, TArgs...>::value>>
     InplaceFunction(F f)
     {
-        static_assert(std::is_copy_constructible<Callable>::value, "Cannot be constructed from non-copyable type");
-        static_assert(sizeof(Callable) <= Capacity, "Insufficient capacity");
+        static_assert(std::is_copy_constructible_v<Callable>, "Cannot be constructed from non-copyable type");
+        static_assert(Capacity >= sizeof(Callable), "Insufficient capacity");
 
-        static const vtable_t vtable(details::Wrapper<Callable>{});
+        static const details::VTable<TRet, TArgs...> vtable(details::Wrapper<Callable>{});
         m_vtable_ptr = std::addressof(vtable);
 
         new (std::addressof(m_storage)) Callable(std::forward<F>(f));
@@ -172,23 +159,15 @@ public:
     [[nodiscard]] constexpr bool operator==(nullptr_t) const { return !operator bool(); }
     [[nodiscard]] constexpr bool operator!=(nullptr_t) const { return operator bool(); }
 
-    [[nodiscard]] constexpr operator bool() const
-    {
-        return m_vtable_ptr != std::addressof(details::empty_vtable<TRet, TArgs...>);
-    }
+    [[nodiscard]] constexpr operator bool() const { return m_vtable_ptr != addressof_empy_vtable(); }
 
 private:
-    using vtable_t = details::VTable<TRet, TArgs...>;
-    using process_ptr_t = typename vtable_t::process_ptr_t;
-    using storage_ptr_t = typename vtable_t::storage_ptr_t;
-
-    InplaceFunction(const vtable_t *vtable_ptr, process_ptr_t process_ptr, storage_ptr_t storage_ptr)
-        : m_vtable_ptr{vtable_ptr}
+    inline constexpr auto *addressof_empy_vtable() const
     {
-        process_ptr(std::addressof(m_storage), storage_ptr);
+        return std::addressof(details::empty_vtable<TRet, TArgs...>);
     }
 
-    const vtable_t *m_vtable_ptr;
+    const details::VTable<TRet, TArgs...> *m_vtable_ptr;
     mutable std::array<uint8_t, Capacity> m_storage;
 };
 

@@ -75,7 +75,7 @@ extern "C"
             DataReadyMessage msg;
 
             while (true) {
-                while (xQueueReceive(data_ready_queue, &msg, 0)) {
+                while (xQueueReceive(data_ready_queue, &msg, 0 /* don't block */)) {
                     ET_ASSERT(msg.registry);
                     for (const auto& event : *msg.registry) {
                         ctx.data_cb(format(event).data());
@@ -92,7 +92,7 @@ extern "C"
 
             DataReadyMessage msg{.registry = &registry, .done_cb = std::move(done_cb)};
 
-            if (xQueueSend(data_ready_queue, &msg, 0 /* don't wait */) != pdPASS) {
+            if (xQueueSend(data_ready_queue, &msg, 0 /* don't block */) != pdPASS) {
                 ET_ERROR("Failed to send tracing data");
             }
         };
