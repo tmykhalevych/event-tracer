@@ -6,6 +6,8 @@ using namespace event_tracer::freertos;
 extern "C"
 #endif
 {
+// the definitions of this functions are inside freertos/config/FreeRTOSConfigExt.h
+
 void trace_task_create(void* task)
 {
     tracer().register_event(EventId::TASK_CREATE, static_cast<TaskHandle_t>(task));

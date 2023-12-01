@@ -72,6 +72,8 @@ public:
     void register_event(EventId id, std::optional<TaskHandle_t> task = std::nullopt,
                         std::optional<Event::timestamp_t> timestamp = std::nullopt);
 
+    void register_user_event(const message_t &message);
+
     [[nodiscard]] Event::timestamp_t now() const { return m_get_time_cb(); }
 
 private:
