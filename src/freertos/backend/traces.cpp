@@ -6,7 +6,8 @@ using namespace event_tracer::freertos;
 extern "C"
 #endif
 {
-// the definitions of this functions are inside freertos/config/FreeRTOSConfigExt.h
+// the declarations of this functions are inside freertos/config/FreeRTOSTraces.h
+// this is done to not bring any external dependencies to event-tracer-config library explicitly
 
 void trace_task_create(void* task)
 {
