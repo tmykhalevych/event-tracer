@@ -1,7 +1,7 @@
 #include <assert.hpp>
 #include <error.hpp>
 #include <event_tracer.hpp>
-#include <traces.h>
+#include <traces.hpp>
 
 #include <FreeRTOS.h>
 #include <queue.h>
@@ -10,42 +10,11 @@
 
 using namespace event_tracer::freertos;
 
-extern "C" void trace_task_create(void* task)
+#ifdef __cplusplus
+extern "C"
+#endif
 {
-    tracer().register_event(EventId::TASK_CREATE, static_cast<TaskHandle_t>(task));
-}
-
-extern "C" void trace_task_delete(void* task)
-{
-    tracer().register_event(EventId::TASK_DELETE, static_cast<TaskHandle_t>(task));
-}
-
-extern "C" void trace_task_switched_in(void* current_tcb)
-{
-    const auto timestamp = tracer().now();
-    static void* previous_tcb = nullptr;
-    if (previous_tcb != current_tcb) {
-        tracer().register_event(EventId::TASK_SWITCHED_IN, static_cast<TaskHandle_t>(current_tcb), timestamp);
-        previous_tcb = current_tcb;
-    }
-}
-
-extern "C" void trace_system_tick(size_t tick_count)
-{
-    // TODO: process profiling logic here
-}
-
-extern "C" void trace_malloc([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
-{
-    tracer().register_event(EventId::MALLOC);
-}
-
-extern "C" void trace_free([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
-{
-    tracer().register_event(EventId::FREE);
-}
-
-extern "C" void traces_init(TracesSettings settings)
+void traces_init(TracesSettings settings)
 {
     struct EventTracerContext
     {
@@ -104,3 +73,7 @@ extern "C" void traces_init(TracesSettings settings)
     xTaskCreate(tracer_task, tracerTASK_NAME, configMINIMAL_STACK_SIZE, &context, (configTIMER_TASK_PRIORITY - 1),
                 nullptr);
 }
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif

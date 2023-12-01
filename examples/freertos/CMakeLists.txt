@@ -7,7 +7,7 @@ set(TASK_TRACES ON CACHE BOOL "")
 find_package(FreeRTOS REQUIRED)
 find_package(Threads REQUIRED)
 
-target_link_libraries(freertos_kernel freertos-traces)
+target_link_libraries(freertos_kernel event-tracer-config)
 
 add_example(freertos main.cpp)
-target_link_libraries(freertos PRIVATE freertos_kernel ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(freertos PRIVATE freertos_kernel event-tracer-client ${CMAKE_THREAD_LIBS_INIT})

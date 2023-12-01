@@ -19,6 +19,20 @@
 #include <array>
 #include <variant>
 
+#ifndef tracerMAX_EVENT_MESSAGE_LEN
+#define tracerMAX_EVENT_MESSAGE_LEN configMAX_TASK_NAME_LEN
+#else
+static_assert(tracerMAX_EVENT_MESSAGE_LEN >= configMAX_TASK_NAME_LEN);
+#endif
+
+#ifndef tracerTASK_ID_TYPE
+#define tracerTASK_ID_TYPE decltype(TaskStatus_t::xTaskNumber)
+#endif
+
+#ifndef tracerTASK_PRIO_TYPE
+#define tracerTASK_PRIO_TYPE decltype(TaskStatus_t::uxCurrentPriority)
+#endif
+
 namespace event_tracer::freertos
 {
 
@@ -81,7 +95,10 @@ using SingleEventTracer = Singleton<EventTracer>;
 
 /// @brief Short alias to access global event tracer
 /// @return Reference to event tracer single instance
-[[nodiscard]] inline EventTracer &tracer() { return SingleEventTracer::instance(); }
+[[nodiscard]] inline EventTracer &tracer()
+{
+    return SingleEventTracer::instance();
+}
 
 /// @brief Event string formatter
 /// @param event Event to format

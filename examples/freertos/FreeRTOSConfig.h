@@ -27,15 +27,19 @@
 #define FREERTOS_CONFIG_H
 
 /*-----------------------------------------------------------
-* Application specific definitions.
-*
-* These definitions should be adjusted for your particular hardware and
-* application requirements.
-*
-* THESE PARAMETERS ARE DESCRIBED WITHIN THE 'CONFIGURATION' SECTION OF THE
-* FreeRTOS API DOCUMENTATION AVAILABLE ON THE FreeRTOS.org WEB SITE.  See
-* https://www.FreeRTOS.org/a00110.html
-*----------------------------------------------------------*/
+ * Application specific definitions.
+ *
+ * These definitions should be adjusted for your particular hardware and
+ * application requirements.
+ *
+ * THESE PARAMETERS ARE DESCRIBED WITHIN THE 'CONFIGURATION' SECTION OF THE
+ * FreeRTOS API DOCUMENTATION AVAILABLE ON THE FreeRTOS.org WEB SITE.  See
+ * https://www.FreeRTOS.org/a00110.html
+ *----------------------------------------------------------*/
+
+// clang-format off
+
+#include <FreeRTOSConfigExt.h>
 
 #define configUSE_PREEMPTION                       1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION    0
@@ -173,4 +177,4 @@ extern void vLoggingPrintf( const char * pcFormatString,
 #endif
 #endif /* FREERTOS_CONFIG_H */
 
-#include <traces.h>
+// clang-format on

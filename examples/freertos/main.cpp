@@ -1,5 +1,6 @@
 #include <FreeRTOS.h>
 #include <task.h>
+#include <traces.hpp>
 
 #include <array>
 #include <cassert>

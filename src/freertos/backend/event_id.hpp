@@ -9,12 +9,8 @@ namespace event_tracer::freertos
 enum class EventId : event_tracer::Event<>::id_t
 {
     UNDEFINED = 0,
-    // user defined events
-    EVENT_USER_1,
-    EVENT_USER_2,
-    EVENT_USER_3,
-    EVENT_USER_4,
-    EVENT_USER_5,
+    // user defined event
+    EVENT_USER,
     // task events
     TASK_MOVED_TO_READY_STATE,
     TASK_POST_MOVED_TO_READY_STATE,
