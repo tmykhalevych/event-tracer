@@ -2,7 +2,7 @@
 
 #include <optional>
 
-namespace event_tracer::freertos
+namespace event_tracer
 {
 
 /// @brief Singleton helper. Support construction with params and accesing
@@ -16,6 +16,7 @@ public:
     template <typename... TArgs>
     static void emplace(TArgs&&... args)
     {
+        if (m_instance) return;
         m_instance.emplace(std::forward<TArgs>(args)...);
     }
 
@@ -26,4 +27,4 @@ private:
     inline static std::optional<TTarget> m_instance = std::nullopt;
 };
 
-}  // namespace event_tracer::freertos
+}  // namespace event_tracer

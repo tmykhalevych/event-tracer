@@ -2,7 +2,6 @@
 #include <error.hpp>
 #include <event_tracer.hpp>
 #include <scope_guard.hpp>
-#include <variant_helpers.hpp>
 
 #include <cstring>
 
@@ -11,15 +10,15 @@ namespace event_tracer::freertos
 
 static constexpr size_t MIN_REGISTRY_CAPACITY = 20;
 
-EventTracer::EventTracer(std::byte *buff, size_t capacity, data_ready_cb_t data_ready_cb, get_time_cb_t get_time_cb)
+EventTracer::EventTracer(Span<std::byte> buff, data_ready_cb_t data_ready_cb, get_time_cb_t get_time_cb)
     : m_data_ready_cb(data_ready_cb), m_get_time_cb(get_time_cb)
 {
     ET_ASSERT(buff);
     ET_ASSERT(data_ready_cb);
     ET_ASSERT(get_time_cb);
 
-    const size_t registry_capacity = capacity / sizeof(Event) / 2;
-    Event *registry_ptr = reinterpret_cast<Event *>(buff);
+    const size_t registry_capacity = buff.size / sizeof(Event) / 2;
+    Event *registry_ptr = reinterpret_cast<Event *>(buff.data);
 
     ET_ASSERT(registry_capacity > 1);
     if (registry_capacity < MIN_REGISTRY_CAPACITY) {
@@ -108,37 +107,6 @@ void EventTracer::on_registry_ready(EventRegistry &registry)
 
     std::swap(m_active_registry, m_pending_registry);
     m_data_ready_cb(*m_pending_registry, [this, &registry = *m_pending_registry] { notify_done(registry); });
-}
-
-std::string_view format(const Event &e, bool newline)
-{
-    static char EVENT_STR[] = "{ts:%" PRIu64 ",event:%" PRIu8 ",ctx:{task:%" PRIu64 ",info:{%s}}}%s";
-    static char CTX_PRIO_STR[] = "prio:%" PRIu64;
-    static char CTX_MSG_STR[] = "msg:\"%s\"";
-    static char CTX_MRK_STR[] = "mark:%" PRIu8;
-
-    static constexpr auto CTX_INFO_STR_SIZE = std::max<size_t>(
-        {std::numeric_limits<task_prio_t>::digits10 + sizeof(CTX_PRIO_STR), MAX_EVENT_MESSAGE_LEN + sizeof(CTX_MSG_STR),
-         std::numeric_limits<ContextMarker>::digits10 + sizeof(CTX_MRK_STR)});
-
-    static constexpr auto EVENT_CONTENT_STR_SIZE = std::numeric_limits<decltype(Event::ts)>::digits10 +
-                                                   std::numeric_limits<decltype(Event::id)>::digits10 +
-                                                   CTX_INFO_STR_SIZE;
-
-    static constexpr auto EVENT_STR_SIZE = EVENT_CONTENT_STR_SIZE + sizeof(EVENT_STR);
-
-    static char event_str[EVENT_STR_SIZE];
-    static char ctx_str[CTX_INFO_STR_SIZE];
-
-    std::visit(
-        Alternatives{[&](task_prio_t prio) { std::snprintf(ctx_str, CTX_INFO_STR_SIZE, CTX_PRIO_STR, prio); },
-                     [&](const message_t &msg) { std::snprintf(ctx_str, CTX_INFO_STR_SIZE, CTX_MSG_STR, msg.data()); },
-                     [&](ContextMarker m) { std::snprintf(ctx_str, CTX_INFO_STR_SIZE, CTX_MRK_STR, m); }},
-        e.ctx.info);
-
-    std::snprintf(event_str, EVENT_STR_SIZE, EVENT_STR, e.ts, e.id, e.ctx.task_id, ctx_str, newline ? "\n" : "");
-
-    return event_str;
 }
 
 }  // namespace event_tracer::freertos

@@ -1,6 +1,7 @@
 #include <FreeRTOS.h>
 #include <task.h>
-#include <traces.hpp>
+
+#include <event_tracer_client.hpp>
 
 #include <array>
 #include <cassert>
@@ -18,27 +19,30 @@ static constexpr std::pair<int, int> TASK_SLEEP_RANGE_MS = {100, 500};
 static constexpr auto TASK_NUM = 5;
 static constexpr auto TASK_NAME_BASE = "task #";
 
-static constexpr auto DATA_REGISTRY_QUEUE_SIZE = 2;
-static constexpr auto DATA_REGISTRY_QUEUE_POLLING_INTERVAL = 100;  // ms
-static constexpr auto TRACES_BUFF_LEN = 0x800;                     // 2K
+static constexpr auto TRACES_BUFF_LEN = 0x800;  // 2K
+
+namespace freertos_tracer = event_tracer::freertos;
 
 int main()
 {
-    std::array<uint8_t, TRACES_BUFF_LEN> traces_buff;
+    std::array<std::byte, TRACES_BUFF_LEN> traces_buff;
 
     auto get_steady_time = []() -> uint64_t {
         using namespace std::chrono;
         return duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count();
     };
 
-    TracesSettings settings{.buff = traces_buff.data(),
-                            .capacity = traces_buff.size(),
-                            .get_timestamp_cb = get_steady_time,
-                            .print_traces_cb = printf,
-                            .data_queue_size = DATA_REGISTRY_QUEUE_SIZE,
-                            .polling_interval_ms = DATA_REGISTRY_QUEUE_POLLING_INTERVAL};
+    auto consume_traces = [](freertos_tracer::EventRegistry &registry, freertos_tracer::data_done_cb_t done_cb) {
+        for (const auto &event : registry) {
+            std::printf(freertos_tracer::format(event).data());
+        }
+        done_cb();
+    };
 
-    traces_init(settings);
+    freertos_tracer::SingleClient::emplace(
+        freertos_tracer::Client::Settings{.buff = event_tracer::Span(traces_buff.data(), traces_buff.size()),
+                                          .get_timestamp_cb = std::move(get_steady_time)},
+        std::move(consume_traces));
 
     const auto task = [](void *) {
         std::random_device dev;
