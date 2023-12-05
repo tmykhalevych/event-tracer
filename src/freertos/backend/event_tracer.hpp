@@ -94,13 +94,7 @@ private:
 };
 
 using SingleEventTracer = Singleton<EventTracer>;
-
-/// @brief Short alias to access global event tracer
-/// @return Reference to event tracer single instance
-[[nodiscard]] inline EventTracer &tracer()
-{
-    return SingleEventTracer::instance();
-}
+using EventTracerPtr = SingleEventTracer::Ptr;
 
 /// @brief Event string formatter
 /// @param event Event to format

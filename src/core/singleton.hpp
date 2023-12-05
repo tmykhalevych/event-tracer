@@ -1,7 +1,5 @@
 #pragma once
 
-#include <assert.hpp>
-
 #include <optional>
 
 namespace event_tracer::freertos
@@ -13,17 +11,16 @@ template <typename TTarget>
 class Singleton
 {
 public:
+    using Ptr = TTarget*;
+
     template <typename... TArgs>
     static void emplace(TArgs&&... args)
     {
         m_instance.emplace(std::forward<TArgs>(args)...);
     }
 
-    static TTarget& instance()
-    {
-        ET_ASSERT(m_instance.has_value());
-        return *m_instance;
-    }
+    static Ptr instance() { return m_instance.has_value() ? &m_instance.value() : nullptr; }
+    static void reset() { m_instance.reset(); }
 
 private:
     inline static std::optional<TTarget> m_instance = std::nullopt;
