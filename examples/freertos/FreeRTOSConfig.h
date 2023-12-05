@@ -40,6 +40,7 @@
 // clang-format off
 
 #include <FreeRTOSConfigExt.h>
+inline long xPortIsInsideInterrupt() { return 0; }
 
 #define configUSE_PREEMPTION                       1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION    0

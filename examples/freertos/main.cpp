@@ -77,7 +77,7 @@ extern "C" void vLoggingPrintf(const char *pcFormatString, ...)
     va_end(args);
 }
 
-extern "C" void vApplicationMallocFailedHook(void)
+extern "C" void vApplicationMallocFailedHook()
 {
     std::cout << "malloc failed" << std::endl;
     assert(false);

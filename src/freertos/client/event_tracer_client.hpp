@@ -12,6 +12,8 @@
 namespace event_tracer::freertos
 {
 
+/// @brief RAII FreeRTOS event tracer client
+/// @note Should be used as singleton ONLY
 class Client : public ProhibitCopyMove
 {
 public:
@@ -21,13 +23,10 @@ public:
     {
         Span<std::byte> buff;
         get_timestamp_cb_t get_timestamp_cb;
-
-        uint data_queue_size = 2;
         uint polling_interval_ms = 100;
 
         task_prio_t prio = configTIMER_TASK_PRIORITY - 1;
         uint stack_size = configMINIMAL_STACK_SIZE;
-
         const char* name = "perf-tools";
     };
 

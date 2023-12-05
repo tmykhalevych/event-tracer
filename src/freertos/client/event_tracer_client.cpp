@@ -5,6 +5,7 @@
 #include <variant_helpers.hpp>
 
 #include <FreeRTOS.h>
+#include <portmacro.h>
 #include <queue.h>
 
 #include <string_view>
@@ -33,7 +34,7 @@ Client::Client(Settings settings, data_ready_cb_t consumer)
 
     SingleEventTracer::emplace(settings.buff, data_ready_handler, settings.get_timestamp_cb);
 
-    m_queue_hdl = xQueueCreate(settings.data_queue_size, sizeof(Message));
+    m_queue_hdl = xQueueCreate(2 /* 2 items for alternated registries */, sizeof(Message));
     ET_ASSERT(m_queue_hdl);
 
     xTaskCreate(Bound<&Client::client_task>, settings.name, settings.stack_size, this, settings.prio, &m_task_hdl);
@@ -68,10 +69,12 @@ void Client::client_task()
 
 void Client::produce_message(Message &&msg)
 {
-    // TODO: handle pushing from ISR
-
     ET_ASSERT(m_queue_hdl);
-    if (xQueueSend(m_queue_hdl, &msg, 0 /* don't block */) != pdPASS) {
+
+    const auto status = xPortIsInsideInterrupt() ? xQueueSendFromISR(m_queue_hdl, &msg, nullptr)
+                                                 : xQueueSend(m_queue_hdl, &msg, 0 /* don't block */);
+
+    if (status != pdPASS) {
         ET_ERROR("Failed to send tracing data");
     }
 }
