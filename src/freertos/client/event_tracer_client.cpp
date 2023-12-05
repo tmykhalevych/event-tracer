@@ -58,7 +58,8 @@ void Client::client_task()
     Message msg;
 
     while (true) {
-        while (xQueueReceive(m_queue_hdl, &msg, 0 /* don't block */)) {
+        ET_ASSERT(m_queue_hdl);
+        while (xQueueReceive(m_queue_hdl, &msg, 0 /* don't block */) == pdPASS) {
             ET_ASSERT(msg.registry);
             ET_ASSERT(msg.done_cb);
             m_consumer(*msg.registry, msg.done_cb);
@@ -70,7 +71,6 @@ void Client::client_task()
 void Client::produce_message(Message &&msg)
 {
     ET_ASSERT(m_queue_hdl);
-
     const auto status = xPortIsInsideInterrupt() ? xQueueSendFromISR(m_queue_hdl, &msg, nullptr)
                                                  : xQueueSend(m_queue_hdl, &msg, 0 /* don't block */);
 
