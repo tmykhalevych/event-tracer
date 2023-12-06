@@ -1,7 +1,10 @@
+#include <critical_section.hpp>
 #include <event_tracer.hpp>
-#include <global_interrupts.hpp>
 
 #include <mutex>
+
+/// @file The declarations of this functions are inside freertos/config/FreeRTOSTraces.h
+///       This is done to not bring any external dependencies to freertos-tracer-config library explicitly
 
 using namespace event_tracer::freertos;
 
@@ -9,12 +12,9 @@ using namespace event_tracer::freertos;
 extern "C"
 #endif
 {
-// the declarations of this functions are inside freertos/config/FreeRTOSTraces.h
-// this is done to not bring any external dependencies to event-tracer-config library explicitly
-
 void trace_task_create(void* task)
 {
-    std::scoped_lock interrupts_lock(GLOBAL_INTERRUPTS);
+    std::scoped_lock lock(INTERRUPTS);
 
     EventTracerPtr tracer = SingleEventTracer::instance();
     if (!tracer) {
@@ -26,7 +26,7 @@ void trace_task_create(void* task)
 
 void trace_task_delete(void* task)
 {
-    std::scoped_lock interrupts_lock(GLOBAL_INTERRUPTS);
+    std::scoped_lock lock(INTERRUPTS);
 
     EventTracerPtr tracer = SingleEventTracer::instance();
     if (!tracer) {
@@ -36,9 +36,33 @@ void trace_task_delete(void* task)
     tracer->register_event(EventId::TASK_DELETE, static_cast<TaskHandle_t>(task));
 }
 
-void trace_task_switched_in(void* current_tcb)
+void trace_malloc([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
 {
-    std::scoped_lock interrupts_lock(GLOBAL_INTERRUPTS);
+    std::scoped_lock lock(INTERRUPTS);
+
+    EventTracerPtr tracer = SingleEventTracer::instance();
+    if (!tracer) {
+        return;
+    }
+
+    tracer->register_event(EventId::MALLOC);
+}
+
+void trace_free([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
+{
+    std::scoped_lock lock(INTERRUPTS);
+
+    EventTracerPtr tracer = SingleEventTracer::instance();
+    if (!tracer) {
+        return;
+    }
+
+    tracer->register_event(EventId::FREE);
+}
+
+void ISR_trace_task_switched_in(void* current_tcb)
+{
+    std::scoped_lock lock(ISR_PREEMPTION);
 
     EventTracerPtr tracer = SingleEventTracer::instance();
     if (!tracer) {
@@ -53,33 +77,11 @@ void trace_task_switched_in(void* current_tcb)
     }
 }
 
-void trace_system_tick(size_t tick_count)
+void ISR_trace_system_tick(size_t tick_count)
 {
+    std::scoped_lock lock(ISR_PREEMPTION);
+
     // TODO: process profiling logic here
-}
-
-void trace_malloc([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
-{
-    std::scoped_lock interrupts_lock(GLOBAL_INTERRUPTS);
-
-    EventTracerPtr tracer = SingleEventTracer::instance();
-    if (!tracer) {
-        return;
-    }
-
-    tracer->register_event(EventId::MALLOC);
-}
-
-void trace_free([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
-{
-    std::scoped_lock interrupts_lock(GLOBAL_INTERRUPTS);
-
-    EventTracerPtr tracer = SingleEventTracer::instance();
-    if (!tracer) {
-        return;
-    }
-
-    tracer->register_event(EventId::FREE);
 }
 
 #ifdef __cplusplus

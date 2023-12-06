@@ -9,11 +9,11 @@
 #ifdef tracerUSE_TASK_TRACES
 #define traceTASK_CREATE(task) trace_task_create(task)
 #define traceTASK_DELETE(task) trace_task_delete(task)
-#define traceTASK_SWITCHED_IN() trace_task_switched_in(pxCurrentTCB)
+#define traceTASK_SWITCHED_IN() ISR_trace_task_switched_in(pxCurrentTCB)
 #endif
 
 #ifdef tracerUSE_TASK_PERF
-#define traceTASK_INCREMENT_TICK(tick_count) trace_system_tick((size_t)tick_count)
+#define traceTASK_INCREMENT_TICK(tick_count) ISR_trace_system_tick((size_t)tick_count)
 #endif
 
 #ifdef tracerUSE_ALLOC_TRACES
