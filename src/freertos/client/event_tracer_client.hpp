@@ -1,6 +1,6 @@
 #pragma once
 
-#include <common.hpp>
+#include <freertos_tracer_types.hpp>
 #include <inplace_function.hpp>
 #include <prohibit_copy_move.hpp>
 #include <singleton.hpp>
