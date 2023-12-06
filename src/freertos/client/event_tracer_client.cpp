@@ -71,11 +71,20 @@ void Client::client_task()
 void Client::produce_message(Message &&msg)
 {
     ET_ASSERT(m_queue_hdl);
-    const auto status = xPortIsInsideInterrupt() ? xQueueSendFromISR(m_queue_hdl, &msg, nullptr)
-                                                 : xQueueSend(m_queue_hdl, &msg, 0 /* don't block */);
+
+    const bool is_inside_isr = xPortIsInsideInterrupt();
+    auto higher_prio_task_woken = pdFALSE;
+
+    const auto status = is_inside_isr ? xQueueSendFromISR(m_queue_hdl, &msg, &higher_prio_task_woken)
+                                      : xQueueSend(m_queue_hdl, &msg, 0 /* don't block */);
 
     if (status != pdPASS) {
         ET_ERROR("Failed to send tracing data");
+        return;
+    }
+
+    if (is_inside_isr == pdTRUE) {
+        portYIELD_FROM_ISR(higher_prio_task_woken);
     }
 }
 

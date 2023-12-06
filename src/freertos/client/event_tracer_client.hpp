@@ -6,6 +6,7 @@
 #include <singleton.hpp>
 #include <span.hpp>
 
+#include <FreeRTOS.h>
 #include <queue.h>
 #include <task.h>
 
