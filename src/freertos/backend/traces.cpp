@@ -1,4 +1,7 @@
 #include <event_tracer.hpp>
+#include <global_interrupts.hpp>
+
+#include <mutex>
 
 using namespace event_tracer::freertos;
 
@@ -11,6 +14,8 @@ extern "C"
 
 void trace_task_create(void* task)
 {
+    std::scoped_lock interrupts_lock(GLOBAL_INTERRUPTS);
+
     EventTracerPtr tracer = SingleEventTracer::instance();
     if (!tracer) {
         return;
@@ -21,6 +26,8 @@ void trace_task_create(void* task)
 
 void trace_task_delete(void* task)
 {
+    std::scoped_lock interrupts_lock(GLOBAL_INTERRUPTS);
+
     EventTracerPtr tracer = SingleEventTracer::instance();
     if (!tracer) {
         return;
@@ -31,6 +38,8 @@ void trace_task_delete(void* task)
 
 void trace_task_switched_in(void* current_tcb)
 {
+    std::scoped_lock interrupts_lock(GLOBAL_INTERRUPTS);
+
     EventTracerPtr tracer = SingleEventTracer::instance();
     if (!tracer) {
         return;
@@ -51,6 +60,8 @@ void trace_system_tick(size_t tick_count)
 
 void trace_malloc([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
 {
+    std::scoped_lock interrupts_lock(GLOBAL_INTERRUPTS);
+
     EventTracerPtr tracer = SingleEventTracer::instance();
     if (!tracer) {
         return;
@@ -61,6 +72,8 @@ void trace_malloc([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
 
 void trace_free([[maybe_unused]] void* addr, [[maybe_unused]] size_t size)
 {
+    std::scoped_lock interrupts_lock(GLOBAL_INTERRUPTS);
+
     EventTracerPtr tracer = SingleEventTracer::instance();
     if (!tracer) {
         return;
