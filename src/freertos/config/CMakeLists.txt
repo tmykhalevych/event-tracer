@@ -23,6 +23,5 @@ if(ALLOC_TRACES)
 endif()
 
 add_library(freertos-tracer-config INTERFACE)
-set_target_properties(freertos-tracer-config PROPERTIES LINKER_LANGUAGE C)
 target_compile_definitions(freertos-tracer-config INTERFACE ${FREERTOS_TRACES_COMPILE_DEFINITIONS})
 target_include_directories(freertos-tracer-config INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

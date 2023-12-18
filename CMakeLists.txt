@@ -6,7 +6,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
-add_subdirectory(examples EXCLUDE_FROM_ALL)
-add_subdirectory(test EXCLUDE_FROM_ALL)
+if(BUILD_EVENT_TRACER_AUXILIARY_TARGETS)
+    add_subdirectory(examples)
+    add_subdirectory(test)
+endif()
 
 add_subdirectory(src)
