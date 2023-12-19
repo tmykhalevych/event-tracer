@@ -8,12 +8,12 @@ static bool g_error = false;
 
 } // namespace
 
-extern "C" void vTracerAssert(const char* const pcFileName, unsigned long ulLine)
+extern "C" void event_tracer_assert(const char* const pcFileName, unsigned long ulLine)
 {
     g_assert = true;
 }
 
-extern "C" void vTracerError(const char* const pcErrorMsg)
+extern "C" void event_tracer_error(const char* const pcErrorMsg)
 {
     g_error = true;
 }

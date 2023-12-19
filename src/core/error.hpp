@@ -1,8 +1,8 @@
 #pragma once
 
 #ifdef tracerUSE_ERROR_HOOK
-extern "C" void vTracerError(const char* const pcErrorMsg);
-#define ET_ERROR(msg) vTracerError(msg)
+void event_tracer_error(const char* const message);
+#define ET_ERROR(msg) event_tracer_error(msg)
 #else
 #include <assert.hpp>
 #include <string_view>
