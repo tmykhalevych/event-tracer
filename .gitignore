@@ -5,3 +5,5 @@
 !/.vscode/launch.json
 
 FreeRTOS*/
+
+__pycache__/

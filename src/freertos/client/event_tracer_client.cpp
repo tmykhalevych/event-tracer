@@ -90,10 +90,11 @@ void Client::produce_message(Message &&msg)
 
 std::string_view format(const Event &e, bool newline)
 {
-    static char EVENT_STR[] = "{ts:%" PRIu64 ",event:%" PRIu8 ",ctx:{task:%" PRIu64 ",info:{%s}}}%s";
-    static char CTX_PRIO_STR[] = "prio:%" PRIu64;
-    static char CTX_MSG_STR[] = "msg:\"%s\"";
-    static char CTX_MRK_STR[] = "mark:%" PRIu8;
+    static char EVENT_STR[] =
+        "{\"ts\":%" PRIu64 ",\"event\":%" PRIu8 ",\"ctx\":{\"task\":%" PRIu64 ",\"info\":{%s}}}%s";
+    static char CTX_PRIO_STR[] = "\"prio\":%" PRIu64;
+    static char CTX_MSG_STR[] = "\"msg\":\"%s\"";
+    static char CTX_MRK_STR[] = "\"mark\":%" PRIu8;
 
     static constexpr auto CTX_INFO_STR_SIZE = std::max<size_t>(
         {std::numeric_limits<task_prio_t>::digits10 + sizeof(CTX_PRIO_STR), MAX_EVENT_MESSAGE_LEN + sizeof(CTX_MSG_STR),

@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+
+import sys
+import signal
+import argparse
+
+from event import *
+
+class TasksExecutionAnalyzer:
+    def __init__(self, realtime: bool):
+        self.__realtime = realtime
+        self.__events = []
+        self.__last_event_ts = None
+        self.__window_ms = 1000
+
+    def push(self, line: str) -> None:
+        event = Event.parse(line)
+        if event is None:
+            return
+
+        self.__events.append(event)
+    
+        if self.__last_event_ts is None:
+            self.__last_event_ts = event.ts
+
+        if (event.ts - self.__last_event_ts) >= (self.__window_ms * 1000):
+            self.__display_events()
+
+    def __display_events(self) -> None:
+        for event in self.__events:
+            print(event)
+
+        self.__events.clear()
+
+def main():
+    signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
+
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--realtime', '-r', type=bool, default=False, help='Real-time visualization')
+    args = argparser.parse_args()
+
+    analyzer = TasksExecutionAnalyzer(args.realtime)
+
+    for line in sys.stdin:
+        analyzer.push(line)
+
+if __name__ == "__main__":
+    main()
