@@ -1,7 +1,6 @@
 import json
 from dataclasses import dataclass, asdict
 from enum import Enum
-from typing import Callable
 
 @dataclass
 class Event:
@@ -48,24 +47,3 @@ class Event:
             event.mark = info["mark"]
 
         return event
-    
-class EventRegistry:
-    def __init__(self, event_processor: Callable[[list], None], capacity_ms: int = 1000):
-        self._events = []
-        self._last_event_ts = None
-        self._event_processing_window_ms = capacity_ms
-        self._event_processor = event_processor
-
-    def push(self, event: Event) -> None:
-        if event is None:
-            return
-
-        self._events.append(event)
-    
-        if self._last_event_ts is None:
-            self._last_event_ts = event.ts
-            return
-
-        if (event.ts - self._last_event_ts) >= (self._event_processing_window_ms * 1000):
-            self._event_processor(self._events)
-            self._events.clear()

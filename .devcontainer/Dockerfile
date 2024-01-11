@@ -18,4 +18,4 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 RUN apt install -y python3 python3-venv
 RUN python3 -m venv "/root/.venv"
 ENV PATH="${PATH}:/root/.venv/bin"
-RUN pip install pre-commit matplotlib
+RUN pip install pre-commit matplotlib tornado
