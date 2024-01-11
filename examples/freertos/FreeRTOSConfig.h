@@ -39,7 +39,7 @@
 
 // clang-format off
 
-#include <FreeRTOSConfigExt.h>
+#include <FreeRTOSConfigEventTracer.h>
 inline long xPortIsInsideInterrupt() { return 0; }
 
 #define configUSE_PREEMPTION                       1

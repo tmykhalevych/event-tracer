@@ -10,8 +10,9 @@ using namespace event_tracer::freertos;
 
 #ifdef __cplusplus
 extern "C"
-#endif
 {
+#endif
+
 void trace_task_create(void* task)
 {
     std::scoped_lock lock(INTERRUPTS);
