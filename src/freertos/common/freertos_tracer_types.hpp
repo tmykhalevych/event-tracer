@@ -5,6 +5,7 @@
 #include <event_id.hpp>
 #include <event_registry.hpp>
 #include <inplace_function.hpp>
+#include <user_event_id.hpp>
 
 #include <FreeRTOS.h>
 #include <task.h>

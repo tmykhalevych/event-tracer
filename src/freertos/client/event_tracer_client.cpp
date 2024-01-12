@@ -1,4 +1,5 @@
 #include <assert.hpp>
+#include <critical_section.hpp>
 #include <error.hpp>
 #include <event_tracer.hpp>
 #include <event_tracer_client.hpp>
@@ -8,6 +9,7 @@
 #include <portmacro.h>
 #include <queue.h>
 
+#include <mutex>
 #include <string_view>
 
 namespace
@@ -51,6 +53,18 @@ Client::~Client()
     if (m_queue_hdl) {
         vQueueDelete(m_queue_hdl);
     }
+}
+
+void Client::emit(UserEventId event, std::optional<std::string_view> message)
+{
+    std::scoped_lock lock(INTERRUPTS);
+
+    EventTracerPtr tracer = SingleEventTracer::instance();
+    if (!tracer) {
+        return;
+    }
+
+    tracer->register_user_event(event, message);
 }
 
 void Client::client_task()

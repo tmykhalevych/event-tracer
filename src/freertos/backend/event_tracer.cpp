@@ -68,7 +68,7 @@ void EventTracer::register_event(EventId id, std::optional<TaskHandle_t> task,
     event.ctx.info = task_prio_t{task_info.uxCurrentPriority};
 }
 
-void EventTracer::register_user_event(const message_t &message)
+void EventTracer::register_user_event(UserEventId id, std::optional<std::string_view> message)
 {
     const auto ts = now();
     const auto tcb = xTaskGetCurrentTaskHandle();
@@ -76,8 +76,13 @@ void EventTracer::register_user_event(const message_t &message)
     TaskStatus_t task_info;
     vTaskGetInfo(tcb, &task_info, pdFALSE, eInvalid);
 
-    Event event{
-        .ts = ts, .id = to_underlying(EventId::EVENT_USER), .ctx = {.task_id = task_info.xTaskNumber, .info = message}};
+    Event event{.ts = ts, .id = to_underlying(id), .ctx = {.task_id = task_info.xTaskNumber}};
+
+    if (message) {
+        message_t msg;
+        std::strncpy(msg.data(), message->data(), msg.max_size());
+        event.ctx.info = msg;
+    }
 
     m_active_registry->add(std::move(event));
 }

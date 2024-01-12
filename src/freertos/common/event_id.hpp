@@ -1,6 +1,7 @@
 #pragma once
 
 #include <event.hpp>
+#include <user_event_id.hpp>
 
 namespace event_tracer::freertos
 {
@@ -9,10 +10,8 @@ namespace event_tracer::freertos
 enum class EventId : event_tracer::Event<>::id_t
 {
     UNDEFINED = 0,
-    // user defined event
-    EVENT_USER,
     // task events
-    TASK_MOVED_TO_READY_STATE,
+    TASK_MOVED_TO_READY_STATE = to_underlying(UserEventId::NEXT),
     TASK_POST_MOVED_TO_READY_STATE,
     TASK_CREATE,
     TASK_CREATE_FAILED,

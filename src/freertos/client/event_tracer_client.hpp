@@ -5,6 +5,7 @@
 #include <prohibit_copy_move.hpp>
 #include <singleton.hpp>
 #include <span.hpp>
+#include <user_event_id.hpp>
 
 #include <FreeRTOS.h>
 #include <queue.h>
@@ -33,6 +34,11 @@ public:
 
     Client(Settings settings, data_ready_cb_t consumer);
     ~Client();
+
+    /// @brief Emits user event to register it alongside the FreeRTOS kernel events
+    /// @param event Event emuneration
+    /// @param message [optional] Message associated with an event
+    void emit(UserEventId event, std::optional<std::string_view> message = std::nullopt);
 
 private:
     struct Message
