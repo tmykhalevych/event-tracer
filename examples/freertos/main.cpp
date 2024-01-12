@@ -12,6 +12,8 @@
 #include <string_view>
 #include <utility>
 
+#include "timers.h"
+
 static constexpr auto MAX_TASK_PRIORITY = configTIMER_TASK_PRIORITY - 2;
 static const auto MIN_TASK_STACK_SIZE = configMINIMAL_STACK_SIZE;
 
@@ -22,6 +24,9 @@ static constexpr auto TASK_NAME_BASE = "task #";
 static constexpr auto TRACES_BUFF_LEN = 0x800;  // 2K
 
 namespace freertos_tracer = event_tracer::freertos;
+using namespace std::chrono_literals;
+
+void start_event_capturing_for(std::chrono::seconds duration);
 
 int main()
 {
@@ -64,8 +69,25 @@ int main()
         xTaskCreate(task, task_name.c_str(), MIN_TASK_STACK_SIZE, nullptr, MAX_TASK_PRIORITY, nullptr);
     }
 
+    start_event_capturing_for(3s);
+
     vTaskStartScheduler();
     return 0;
+}
+
+void start_event_capturing_for(std::chrono::seconds duration)
+{
+    using freertos_tracer::UserEventId;
+
+    freertos_tracer::SingleClient::instance()->emit(UserEventId::START_CAPTURING, "test_app");
+
+    auto capturing_timer = xTimerCreate(
+        "CapturingTimer", pdMS_TO_TICKS(duration.count() * 1000), pdFALSE, 0,
+        [](TimerHandle_t) { freertos_tracer::SingleClient::instance()->emit(UserEventId::STOP_CAPTURING); });
+
+    if (!capturing_timer) return;
+
+    xTimerStart(capturing_timer, 0);
 }
 
 extern "C" void vLoggingPrintf(const char *pcFormatString, ...)

@@ -58,13 +58,7 @@ Client::~Client()
 void Client::emit(UserEventId event, std::optional<std::string_view> message)
 {
     std::scoped_lock lock(INTERRUPTS);
-
-    EventTracerPtr tracer = SingleEventTracer::instance();
-    if (!tracer) {
-        return;
-    }
-
-    tracer->register_user_event(event, message);
+    SingleEventTracer::instance()->register_user_event(event, message);
 }
 
 void Client::client_task()

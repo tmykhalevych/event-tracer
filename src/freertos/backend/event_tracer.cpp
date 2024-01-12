@@ -77,12 +77,13 @@ void EventTracer::register_user_event(UserEventId id, std::optional<std::string_
     vTaskGetInfo(tcb, &task_info, pdFALSE, eInvalid);
 
     Event event{.ts = ts, .id = to_underlying(id), .ctx = {.task_id = task_info.xTaskNumber}};
+    message_t msg{};
 
     if (message) {
-        message_t msg;
         std::strncpy(msg.data(), message->data(), msg.max_size());
-        event.ctx.info = msg;
     }
+
+    event.ctx.info = msg;
 
     m_active_registry->add(std::move(event));
 }
