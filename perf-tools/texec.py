@@ -2,10 +2,12 @@ import sys
 import signal
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 from threading import Thread, Event as ThreadEvent, Lock
 from matplotlib.animation import FuncAnimation
 from event import Event as FreertosEvent
+from screen import *
 
 class TasksExecutionVisualizer:
     def __init__(self, realtime: bool = True, out_dir: str = ".", update_interval_ms: int = 1000):
@@ -14,10 +16,13 @@ class TasksExecutionVisualizer:
         self._update_interval_ms = update_interval_ms
 
         self._events_mtx = Lock()
+        self._last_swithed_in: FreertosEvent = None
         self._tasks_switched_in = []
         self._tasks_created = []
         self._tasks_deleted = []
         self._user_events = []
+
+        self._task_names = {}
 
         self._configure_plot()
     
@@ -31,33 +36,40 @@ class TasksExecutionVisualizer:
            self._handle_new_event(event)
 
     def save(self) -> None:
-        plt.savefig(f"{self._out_dir}/texec.png")
+        if not self._realtime:
+            plt.savefig(f"{self._out_dir}/texec.png")
 
     def _configure_plot(self) -> None:
-        if self._realtime:
-            matplotlib.use('WebAgg')
-        else:
-            matplotlib.use('Agg')
+        if self._realtime: matplotlib.use('WebAgg')
+        else: matplotlib.use('Agg')
 
-        self._figure, self._ax = plt.subplots(figsize=(10, 6))
-        self._ax.set_xlabel('Timeline')
-        self._ax.set_ylabel('Tasks')
-        self._ax.set_title('[perf-tools] Tasks execution sequence')
+        self._figure, self._axes = plt.subplots(figsize=max_screen_size())
+        self._axes.set_xlabel('Timeline')
+        self._axes.set_ylabel('Tasks')
+        self._axes.set_title('[perf-tools] Tasks execution sequence')
         self._animation = FuncAnimation(self._figure,
-                                        lambda frames: self._update_plot(frames),
+                                        lambda _: self._update_plot(),
                                         self._update_interval_ms)
 
     def _handle_new_event(self, event: FreertosEvent):
-        event_buckets = {
-            FreertosEvent.Id.TASK_CREATE: self._tasks_created,
-            FreertosEvent.Id.TASK_DELETE: self._tasks_deleted,
-            FreertosEvent.Id.TASK_SWITCHED_IN: self._tasks_switched_in,
-            FreertosEvent.Id.USER: self._user_events
-        }
+        if event.id is FreertosEvent.Id.TASK_CREATE:
+            self._task_names[event.task] = event.msg
 
-        event_buckets[event.id].append(event)
+        if event.id is FreertosEvent.Id.TASK_SWITCHED_IN:
+            if self._last_swithed_in:
+                self._last_swithed_in.ts_end = event.ts_start
+                self._tasks_switched_in.append(self._last_swithed_in)
 
-    def _update_plot(self, frames) -> None:
+            self._last_swithed_in = event
+        else:
+            event_buckets = {
+                FreertosEvent.Id.TASK_CREATE: self._tasks_created,
+                FreertosEvent.Id.TASK_DELETE: self._tasks_deleted,
+                FreertosEvent.Id.USER: self._user_events
+            }
+            event_buckets[event.id].append(event)
+
+    def _update_plot(self) -> None:
         targets = [
             (self._tasks_created, self._plot_task_created),
             (self._tasks_switched_in, self._plot_task_switched_in),
@@ -71,8 +83,6 @@ class TasksExecutionVisualizer:
                     for item in collection:
                         plot(item)
 
-                    collection.clear()
-
     def _plot_task_created(self, event: FreertosEvent):
         # TODO: visualize event
         pass
@@ -82,8 +92,10 @@ class TasksExecutionVisualizer:
         pass
 
     def _plot_task_switched_in(self, event: FreertosEvent):
-        # TODO: visualize event
-        pass
+        self._axes.barh(y=self._task_names[event.task],
+                        left=event.ts_start,
+                        width=event.ts_end - event.ts_start,
+                        color='blue')
 
     def _plot_user_event(self, event: FreertosEvent):
         # TODO: visualize event

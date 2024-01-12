@@ -1,4 +1,6 @@
 import json
+
+from datetime import timedelta
 from dataclasses import dataclass, asdict
 from enum import Enum
 
@@ -10,9 +12,11 @@ class Event:
         TASK_DELETE = 8
         TASK_SWITCHED_IN = 23
 
-    ts: int # us
+    ts_start: int
     id: Id
     task: int
+
+    ts_end: int = None
     prio: int = None
     msg: str = None
     mark: int = None
@@ -33,10 +37,10 @@ class Event:
         except ValueError:
             return None
 
-        ts = data["ts"]
+        ts_start = data["ts"]
         task = data["ctx"]["task"]
 
-        event = Event(ts, id, task)
+        event = Event(ts_start, id, task)
 
         info = data["ctx"]["info"]
         if "prio" in info:
