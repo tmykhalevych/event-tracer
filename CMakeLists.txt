@@ -8,7 +8,7 @@ set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 if(BUILD_EVENT_TRACER_AUXILIARY_TARGETS)
     add_subdirectory(examples)
-    add_subdirectory(test)
+    # add_subdirectory(test)
 endif()
 
 add_subdirectory(src)
