@@ -14,11 +14,11 @@ class Event:
         TASK_DELETE = 10
         TASK_SWITCHED_IN = 25
 
-    ts_start: int
+    ts: int
     id: Id
     task: int
 
-    ts_end: int = None
+    length: int = None
     prio: int = None
     mark: int = None
 

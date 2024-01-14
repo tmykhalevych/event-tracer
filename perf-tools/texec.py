@@ -4,7 +4,7 @@ import webbrowser
 import plotly.express as px
 import plotly.graph_objects as go
 
-from pandas import DataFrame, to_datetime
+from pandas import DataFrame, Timedelta, to_datetime
 from event import Event as FreertosEvent, asdict
 
 class TasksExecutionVisualizer:
@@ -39,7 +39,7 @@ class TasksExecutionVisualizer:
 
     def _process_switched_in(self, event: FreertosEvent):
         if self._last_swithed_in:
-            self._last_swithed_in.ts_end = event.ts_start
+            self._last_swithed_in.length = event.ts - self._last_swithed_in.ts
             if self._capturing:
                 self._events.append(self._last_swithed_in)
 
@@ -57,13 +57,13 @@ class TasksExecutionVisualizer:
         messages = extract_by(FreertosEvent.Id.USER_MESSAGE)
 
         df = DataFrame(task_events)
-        df['ts_start'] = to_datetime(df['ts_start'])
-        df['ts_end'] = to_datetime(df['ts_end'])
+        df['end'] = to_datetime(df['ts'] + df['length'])
+        df['ts'] = to_datetime(df['ts'])
 
-        scatter_fig = px.scatter(df, x='ts_start', y='text', color='prio', size_max=10)
+        scatter_fig = px.scatter(df, x='ts', y='text', color='prio', size_max=10)
         gantt_fig = px.timeline(df,
-                                x_start='ts_start',
-                                x_end='ts_end',
+                                x_start='ts',
+                                x_end='end',
                                 y='text',
                                 color='prio',
                                 title='[perf-tools] Tasks execution sequence')
