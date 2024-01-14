@@ -1,124 +1,88 @@
 import sys
-import signal
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
+import webbrowser
 
-from threading import Thread, Event as ThreadEvent, Lock
-from matplotlib.animation import FuncAnimation
-from event import Event as FreertosEvent
-from screen import *
+import plotly.express as px
+import plotly.graph_objects as go
+
+from pandas import DataFrame, to_datetime
+from event import Event as FreertosEvent, asdict
 
 class TasksExecutionVisualizer:
-    def __init__(self, realtime: bool = True, out_dir: str = ".", update_interval_ms: int = 1000):
-        self._realtime = realtime
+    def __init__(self, out_dir: str = ".", preroll_ms: int = 100, postroll_ms: int = 100):
         self._out_dir = out_dir
-        self._update_interval_ms = update_interval_ms
+        self._preroll_ms = preroll_ms
+        self._postroll_ms = postroll_ms
 
-        self._events_mtx = Lock()
-        self._last_swithed_in: FreertosEvent = None
-        self._tasks_switched_in = []
-        self._tasks_created = []
-        self._tasks_deleted = []
-        self._user_events = []
-
+        self._events = []
         self._task_names = {}
 
-        self._configure_plot()
-    
-    def start(self):
-        if self._realtime:
-            plt.show()
+        self._capturing: bool = False
+        self._report_name: str = None
+        self._last_swithed_in: FreertosEvent = None
 
-    def process(self, event: FreertosEvent) -> None:
+    def process(self, event: FreertosEvent):
         if event is None: return
-        with self._events_mtx:
-           self._handle_new_event(event)
 
-    def save(self) -> None:
-        if not self._realtime:
-            plt.savefig(f"{self._out_dir}/texec.png")
-
-    def _configure_plot(self) -> None:
-        if self._realtime: matplotlib.use('WebAgg')
-        else: matplotlib.use('Agg')
-
-        self._figure, self._axes = plt.subplots(figsize=max_screen_size())
-        self._axes.set_xlabel('Timeline')
-        self._axes.set_ylabel('Tasks')
-        self._axes.set_title('[perf-tools] Tasks execution sequence')
-        self._animation = FuncAnimation(self._figure,
-                                        lambda _: self._update_plot(),
-                                        self._update_interval_ms)
-
-    def _handle_new_event(self, event: FreertosEvent):
-        if event.id is FreertosEvent.Id.TASK_CREATE:
-            self._task_names[event.task] = event.msg
-
-        if event.id is FreertosEvent.Id.TASK_SWITCHED_IN:
-            if self._last_swithed_in:
-                self._last_swithed_in.ts_end = event.ts_start
-                self._tasks_switched_in.append(self._last_swithed_in)
-
-            self._last_swithed_in = event
+        if event.id is FreertosEvent.Id.USER_START_CAPTURING:
+            self._report_name = event.text
+            self._capturing = True
+        elif event.id is FreertosEvent.Id.USER_STOP_CAPTURING:
+            self._display_report()
+            self._capturing = False
+        elif event.id is FreertosEvent.Id.TASK_SWITCHED_IN:
+            self._process_switched_in(event)
         else:
-            event_buckets = {
-                FreertosEvent.Id.TASK_CREATE: self._tasks_created,
-                FreertosEvent.Id.TASK_DELETE: self._tasks_deleted,
-                FreertosEvent.Id.USER: self._user_events
-            }
-            event_buckets[event.id].append(event)
+            if event.id is FreertosEvent.Id.TASK_CREATE:
+                self._task_names[event.task] = event.text
 
-    def _update_plot(self) -> None:
-        targets = [
-            (self._tasks_created, self._plot_task_created),
-            (self._tasks_switched_in, self._plot_task_switched_in),
-            (self._tasks_deleted, self._plot_task_deleted),
-            (self._user_events, self._plot_user_event)
-        ]
+            self._events.append(event)
 
-        with self._events_mtx:
-            for collection, plot in targets:
-                if collection:
-                    for item in collection:
-                        plot(item)
+    def _process_switched_in(self, event: FreertosEvent):
+        if self._last_swithed_in:
+            self._last_swithed_in.ts_end = event.ts_start
+            if self._capturing:
+                self._events.append(self._last_swithed_in)
 
-    def _plot_task_created(self, event: FreertosEvent):
-        # TODO: visualize event
-        pass
+        self._last_swithed_in = event
 
-    def _plot_task_deleted(self, event: FreertosEvent):
-        # TODO: visualize event
-        pass
+    def _display_report(self):
+        def extract_by(id: FreertosEvent.Id) -> list:
+            return [event for event in self._events if event.id is id]
 
-    def _plot_task_switched_in(self, event: FreertosEvent):
-        self._axes.barh(y=self._task_names[event.task],
-                        left=event.ts_start,
-                        width=event.ts_end - event.ts_start,
-                        color='blue')
+        task_events = extract_by(FreertosEvent.Id.TASK_SWITCHED_IN)
+        for event in task_events: event.text = self._task_names[event.task]
 
-    def _plot_user_event(self, event: FreertosEvent):
-        # TODO: visualize event
-        pass
+        task_create_events = extract_by(FreertosEvent.Id.TASK_CREATE)
+        task_delete_events = extract_by(FreertosEvent.Id.TASK_DELETE)
+        messages = extract_by(FreertosEvent.Id.USER_MESSAGE)
+
+        df = DataFrame(task_events)
+        df['ts_start'] = to_datetime(df['ts_start'])
+        df['ts_end'] = to_datetime(df['ts_end'])
+
+        scatter_fig = px.scatter(df, x='ts_start', y='text', color='prio', size_max=10)
+        gantt_fig = px.timeline(df,
+                                x_start='ts_start',
+                                x_end='ts_end',
+                                y='text',
+                                color='prio',
+                                title='[perf-tools] Tasks execution sequence')
+            
+        gantt_fig.update_layout(xaxis_title='Timeline [us]',
+                                yaxis_title='Task',
+                                coloraxis_colorbar={'title': 'Task priority'},
+                                showlegend=True)
+    
+        gantt_fig.add_trace(scatter_fig.data[0])
+
+        report = f"{self._out_dir}/{self._report_name}.html"
+
+        gantt_fig.write_html(report)
+        webbrowser.open('file://' + report)
 
 def main():
-    stop_event = ThreadEvent()
-    signal.signal(signal.SIGINT, lambda *_: stop_event.set())
-
-    visualizer = TasksExecutionVisualizer()
-
-    def read_input(stop: ThreadEvent):
-        for line in sys.stdin:
-            if stop.is_set(): return
-            visualizer.process(FreertosEvent.parse(line))
-
-    input_thread = Thread(target=read_input, args=(stop_event,))
-
-    input_thread.start()
-    visualizer.start()
-
-    input_thread.join()
-    visualizer.save()
+    app = TasksExecutionVisualizer()
+    for line in sys.stdin: app.process(FreertosEvent.parse(line))
 
 if __name__ == "__main__":
     main()

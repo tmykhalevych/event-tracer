@@ -7,10 +7,12 @@ from enum import Enum
 @dataclass
 class Event:
     class Id(Enum):
-        USER = 1
-        TASK_CREATE = 4
-        TASK_DELETE = 8
-        TASK_SWITCHED_IN = 23
+        USER_START_CAPTURING = 1
+        USER_STOP_CAPTURING = 2
+        USER_MESSAGE = 3
+        TASK_CREATE = 6
+        TASK_DELETE = 10
+        TASK_SWITCHED_IN = 25
 
     ts_start: int
     id: Id
@@ -18,8 +20,9 @@ class Event:
 
     ts_end: int = None
     prio: int = None
-    msg: str = None
     mark: int = None
+
+    text: str = None
 
     def __str__(self) -> str:
         return str(asdict(self))
@@ -46,7 +49,7 @@ class Event:
         if "prio" in info:
             event.prio = info["prio"]
         if "msg" in info:
-            event.msg = info["msg"]
+            event.text = info["msg"]
         if "mark" in info:
             event.mark = info["mark"]
 
