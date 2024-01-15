@@ -10,6 +10,8 @@
 #include <FreeRTOS.h>
 #include <queue.h>
 #include <task.h>
+ 
+namespace freertos_tracer = event_tracer::freertos;
 
 namespace event_tracer::freertos
 {

@@ -33,6 +33,9 @@ class Event:
             data = json.loads(input)
         except json.JSONDecodeError:
             return None
+        
+        if not isinstance(data, dict) or not "event" in data:
+            return None
 
         id = None
         try:
@@ -40,10 +43,10 @@ class Event:
         except ValueError:
             return None
 
-        ts_start = data["ts"]
+        ts = data["ts"]
         task = data["ctx"]["task"]
 
-        event = Event(ts_start, id, task)
+        event = Event(ts, id, task)
 
         info = data["ctx"]["info"]
         if "prio" in info:
