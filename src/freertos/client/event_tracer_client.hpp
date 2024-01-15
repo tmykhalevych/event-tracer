@@ -10,8 +10,6 @@
 #include <FreeRTOS.h>
 #include <queue.h>
 #include <task.h>
- 
-namespace freertos_tracer = event_tracer::freertos;
 
 namespace event_tracer::freertos
 {
@@ -27,8 +25,8 @@ public:
     {
         Span<std::byte> buff;
         get_timestamp_cb_t get_timestamp_cb;
+        uint max_task_num_expected = 10;
         uint polling_interval_ms = 100;
-        uint max_task_num_expected = 30;
 
         task_prio_t prio = configTIMER_TASK_PRIORITY - 1;
         uint stack_size = configMINIMAL_STACK_SIZE;

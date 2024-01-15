@@ -114,7 +114,7 @@ void Client::produce_message(Message &&msg)
         return;
     }
 
-    if (is_inside_isr == pdTRUE) {
+    if (is_inside_isr) {
         portYIELD_FROM_ISR(higher_prio_task_woken);
     }
 }
@@ -136,8 +136,10 @@ void Client::dump_system_state()
     {
         std::scoped_lock lock(INTERRUPTS);
         for (const auto& task_status : m_system_state) {
-            SingleEventTracer::instance()->register_user_event(
-                UserEventId::DUMP_SYSTEM_STATE, task_status.pcTaskName, &task_status);
+            if (task_status.pcTaskName) {
+                SingleEventTracer::instance()->register_user_event(
+                    UserEventId::DUMP_SYSTEM_STATE, task_status.pcTaskName, &task_status);
+            }
         }
     }
 }
