@@ -21,7 +21,12 @@ class TasksExecutionVisualizer:
         self._last_swithed_in: FreertosEvent = None
 
     def process(self, event: FreertosEvent):
-        if event is None: return
+        if event is None:
+            return
+        
+        if event.id is FreertosEvent.Id.TASK_SWITCHED_IN:
+            self._process_switched_in(event)
+            return
 
         if event.id is FreertosEvent.Id.USER_START_CAPTURING:
             self._report_name = event.text
@@ -29,13 +34,12 @@ class TasksExecutionVisualizer:
         elif event.id is FreertosEvent.Id.USER_STOP_CAPTURING:
             self._display_report()
             self._capturing = False
-        elif event.id is FreertosEvent.Id.TASK_SWITCHED_IN:
-            self._process_switched_in(event)
-        else:
-            if event.id is FreertosEvent.Id.TASK_CREATE:
-                self._task_names[event.task] = event.text
+        elif event.id is FreertosEvent.Id.DUMP_SYSTEM_STATE:
+            self._task_names[event.task] = event.text
+        elif event.id is FreertosEvent.Id.TASK_CREATE:
+            self._task_names[event.task] = event.text
 
-            self._events.append(event)
+        self._events.append(event)
 
     def _process_switched_in(self, event: FreertosEvent):
         if self._last_swithed_in:
@@ -50,7 +54,11 @@ class TasksExecutionVisualizer:
             return [event for event in self._events if event.id is id]
 
         task_events = extract_by(FreertosEvent.Id.TASK_SWITCHED_IN)
-        for event in task_events: event.text = self._task_names[event.task]
+        for event in task_events:
+            if event.task in self._task_names:
+                event.text = self._task_names[event.task]
+            else:
+                event.text = f"Task #{event.task}"
 
         task_create_events = extract_by(FreertosEvent.Id.TASK_CREATE)
         task_delete_events = extract_by(FreertosEvent.Id.TASK_DELETE)
@@ -82,7 +90,7 @@ class TasksExecutionVisualizer:
 
 def main():
     app = TasksExecutionVisualizer()
-    for line in sys.stdin: app.process(FreertosEvent.parse(line))
+    for line in sys.stdin.buffer.raw: app.process(FreertosEvent.parse(line))
 
 if __name__ == "__main__":
     main()

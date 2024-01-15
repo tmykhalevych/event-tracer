@@ -58,8 +58,8 @@ void EventTracer::register_event(EventId id, std::optional<TaskHandle_t> task,
 
     // add task name to task lifetime events
     if (needs_message(id)) {
-        message_t msg;
-        std::strncpy(msg.data(), task_info.pcTaskName, msg.max_size());
+        message_t msg{'\0'};
+        std::strncpy(msg.data(), task_info.pcTaskName, msg.max_size() - 1);
         event.ctx.info = msg;
         return;
     }
@@ -68,19 +68,25 @@ void EventTracer::register_event(EventId id, std::optional<TaskHandle_t> task,
     event.ctx.info = task_prio_t{task_info.uxCurrentPriority};
 }
 
-void EventTracer::register_user_event(UserEventId id, std::optional<std::string_view> message)
+void EventTracer::register_user_event(UserEventId id, std::optional<std::string_view> message,
+                                      const TaskStatus_t* task_status)
 {
     const auto ts = now();
-    const auto tcb = xTaskGetCurrentTaskHandle();
 
     TaskStatus_t task_info;
-    vTaskGetInfo(tcb, &task_info, pdFALSE, eInvalid);
+    if (task_status) {
+        task_info = *task_status;
+    }
+    else {
+        const auto tcb = xTaskGetCurrentTaskHandle();
+        vTaskGetInfo(tcb, &task_info, pdFALSE, eInvalid);
+    }
 
     Event event{.ts = ts, .id = to_underlying(id), .ctx = {.task_id = task_info.xTaskNumber}};
-    message_t msg{};
+    message_t msg{'\0'};
 
     if (message) {
-        std::strncpy(msg.data(), message->data(), msg.max_size());
+        std::strncpy(msg.data(), message->data(), msg.max_size() - 1);
     }
 
     event.ctx.info = msg;

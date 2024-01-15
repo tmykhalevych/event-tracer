@@ -30,7 +30,8 @@ public:
     void register_event(EventId id, std::optional<TaskHandle_t> task = std::nullopt,
                         std::optional<Event::timestamp_t> timestamp = std::nullopt);
 
-    void register_user_event(UserEventId id, std::optional<std::string_view> message = std::nullopt);
+    void register_user_event(UserEventId id, std::optional<std::string_view> message = std::nullopt,
+                             const TaskStatus_t* task_status = nullptr);
 
     [[nodiscard]] Event::timestamp_t now() const { return m_get_time_cb(); }
 

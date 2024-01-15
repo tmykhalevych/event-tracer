@@ -9,6 +9,7 @@ namespace event_tracer::freertos
 enum class UserEventId : event_tracer::Event<>::id_t
 {
     UNDEFINED = 0,
+    DUMP_SYSTEM_STATE,
     START_CAPTURING,
     STOP_CAPTURING,
     MESSAGE,

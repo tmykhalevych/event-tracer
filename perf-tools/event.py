@@ -7,12 +7,13 @@ from enum import Enum
 @dataclass
 class Event:
     class Id(Enum):
-        USER_START_CAPTURING = 1
-        USER_STOP_CAPTURING = 2
-        USER_MESSAGE = 3
-        TASK_CREATE = 6
-        TASK_DELETE = 10
-        TASK_SWITCHED_IN = 25
+        DUMP_SYSTEM_STATE = 1
+        USER_START_CAPTURING = 2
+        USER_STOP_CAPTURING = 3
+        USER_MESSAGE = 4
+        TASK_CREATE = 7
+        TASK_DELETE = 11
+        TASK_SWITCHED_IN = 26
 
     ts: int
     id: Id

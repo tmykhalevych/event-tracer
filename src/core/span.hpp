@@ -15,7 +15,11 @@ struct Span
 
     ~Span() = default;
 
+    [[nodiscard]] size_t size_bytes() const { return sizeof(T) * size; }
     [[nodiscard]] operator bool() const { return (data != nullptr) && (size > 0); }
+
+    const T* begin() const { return data; }
+    const T* end() const { return data + size; }
 
     T *data = nullptr;
     size_t size = 0;

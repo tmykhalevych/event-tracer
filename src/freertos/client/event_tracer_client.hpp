@@ -28,6 +28,7 @@ public:
         Span<std::byte> buff;
         get_timestamp_cb_t get_timestamp_cb;
         uint polling_interval_ms = 100;
+        uint max_task_num_expected = 30;
 
         task_prio_t prio = configTIMER_TASK_PRIORITY - 1;
         uint stack_size = configMINIMAL_STACK_SIZE;
@@ -51,12 +52,15 @@ private:
 
     void client_task();
     void produce_message(Message&& msg);
+    void dump_system_state();
 
     QueueHandle_t m_queue_hdl = nullptr;
     TaskHandle_t m_task_hdl = nullptr;
+    Span<TaskStatus_t> m_system_state;
 
     const data_ready_cb_t m_consumer;
     const uint m_polling_interval_ms;
+    const uint m_max_task_num_expected;
 };
 
 using SingleClient = Singleton<Client>;
