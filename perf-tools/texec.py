@@ -2,10 +2,9 @@ import sys
 import webbrowser
 
 import plotly.express as px
-import plotly.graph_objects as go
 
-from pandas import DataFrame, Timedelta, to_datetime
-from event import Event as FreertosEvent, asdict
+from pandas import DataFrame, to_datetime
+from event import Event as FreertosEvent
 
 class TasksExecutionVisualizer:
     def __init__(self, out_dir: str = ".", preroll_ms: int = 100, postroll_ms: int = 100):
@@ -65,24 +64,37 @@ class TasksExecutionVisualizer:
         messages = extract_by(FreertosEvent.Id.USER_MESSAGE)
 
         df = DataFrame(task_events)
-        df['end'] = to_datetime(df['ts'] + df['length'])
-        df['ts'] = to_datetime(df['ts'])
+        df['end'] = to_datetime(df['ts'] + df['length'], unit='us')
+        df['ts'] = to_datetime(df['ts'], unit='us')
 
-        scatter_fig = px.scatter(df, x='ts', y='text', color='prio', size_max=10)
+        # draw tasks execution periods
         gantt_fig = px.timeline(df,
                                 x_start='ts',
                                 x_end='end',
                                 y='text',
                                 color='prio',
                                 title='[perf-tools] Tasks execution sequence')
-            
+  
         gantt_fig.update_layout(xaxis_title='Timeline [us]',
                                 yaxis_title='Task',
-                                coloraxis_colorbar={'title': 'Task priority'},
+                                coloraxis_colorbar=dict(title='Task priority'),
                                 showlegend=True)
-    
+
+        gantt_fig.update_xaxes(dtick=100,
+                               tickformat='%H:%M:%S.%L',
+                               minor=dict(dtick=10, griddash='dot'))
+
+        # draw context swith points
+        scatter_fig = px.scatter(df, x='ts', y='text', color='prio', size_max=10)
         gantt_fig.add_trace(scatter_fig.data[0])
 
+        # draw messages
+        for message in messages:
+            timepoint = to_datetime(message.ts, unit='us')
+            gantt_fig.add_vline(x=timepoint, line_width=1, line_dash="dash", line_color="green")
+            gantt_fig.add_annotation(x=timepoint, text=message.text)
+
+        # save and show the report
         report = f"{self._out_dir}/{self._report_name}.html"
 
         gantt_fig.write_html(report)

@@ -21,12 +21,13 @@ static constexpr std::pair<int, int> TASK_SLEEP_RANGE_MS = {100, 500};
 static constexpr auto TASK_NUM = 5;
 static constexpr auto TASK_NAME_BASE = "task #";
 
-static constexpr auto TRACES_BUFF_LEN = 0x800;  // 2K
+static constexpr auto TRACES_BUFF_LEN = 0x2800;  // 10K
 
 namespace freertos_tracer = event_tracer::freertos;
 using namespace std::chrono_literals;
 
 void start_event_capturing_for(std::chrono::seconds duration);
+void post_message_in(std::chrono::seconds duration, std::string msg);
 
 int main()
 {
@@ -70,6 +71,7 @@ int main()
     }
 
     start_event_capturing_for(3s);
+    post_message_in(1s, "message");
 
     vTaskStartScheduler();
     return 0;
@@ -86,7 +88,20 @@ void start_event_capturing_for(std::chrono::seconds duration)
         [](TimerHandle_t) { freertos_tracer::SingleClient::instance()->emit(UserEventId::STOP_CAPTURING); });
 
     if (!capturing_timer) return;
+    xTimerStart(capturing_timer, 0);
+}
 
+void post_message_in(std::chrono::seconds duration, std::string msg)
+{
+    using freertos_tracer::UserEventId;
+
+    static std::string message = std::move(msg);
+
+    auto capturing_timer = xTimerCreate(
+        "MessageTimer", pdMS_TO_TICKS(duration.count() * 1000), pdFALSE, 0,
+        [](TimerHandle_t) { freertos_tracer::SingleClient::instance()->emit(UserEventId::MESSAGE, message); });
+
+    if (!capturing_timer) return;
     xTimerStart(capturing_timer, 0);
 }
 
