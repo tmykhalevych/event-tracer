@@ -3,6 +3,7 @@ import webbrowser
 
 import plotly.express as px
 
+from datetime import datetime
 from pandas import DataFrame, to_datetime
 from event import Event as FreertosEvent
 
@@ -15,8 +16,8 @@ class TasksExecutionVisualizer:
         self._events = []
         self._task_names = {}
 
-        self._capturing: bool = False
-        self._report_name: str = None
+        self._capturing = False
+        self._report_info = {}
         self._last_swithed_in: FreertosEvent = None
         self._start_event: FreertosEvent = None
         self._stop_event: FreertosEvent = None
@@ -31,7 +32,7 @@ class TasksExecutionVisualizer:
 
         if event.id is FreertosEvent.Id.USER_START_CAPTURING:
             self._start_event = event
-            self._report_name = event.text
+            self._report_info = dict(time=datetime.now(), name=event.text)
             self._capturing = True
         elif event.id is FreertosEvent.Id.USER_STOP_CAPTURING:
             self._stop_event = event
@@ -109,10 +110,14 @@ class TasksExecutionVisualizer:
         gantt_fig.add_vline(x=endtpoint, line_width=1, line_dash="dash", line_color="red")
         gantt_fig.add_annotation(x=endtpoint, text="stop capturing")
 
-        # save and show the report
-        report = f"{self._out_dir}/{self._report_name}.html"
+        # save report
+        name = self._report_info["name"]
+        time = self._report_info["time"].strftime("%d-%m-%Y__%H-%M-%S")
+        report = f'{self._out_dir}/texec__{name}__{time}.html'
 
         gantt_fig.write_html(report)
+
+        # show report
         webbrowser.open('file://' + report)
 
 def main():
