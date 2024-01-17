@@ -7,3 +7,4 @@
 FreeRTOS*/
 
 __pycache__/
+*.html

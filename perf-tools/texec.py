@@ -18,6 +18,8 @@ class TasksExecutionVisualizer:
         self._capturing: bool = False
         self._report_name: str = None
         self._last_swithed_in: FreertosEvent = None
+        self._start_event: FreertosEvent = None
+        self._stop_event: FreertosEvent = None
 
     def process(self, event: FreertosEvent):
         if event is None:
@@ -28,9 +30,11 @@ class TasksExecutionVisualizer:
             return
 
         if event.id is FreertosEvent.Id.USER_START_CAPTURING:
+            self._start_event = event
             self._report_name = event.text
             self._capturing = True
         elif event.id is FreertosEvent.Id.USER_STOP_CAPTURING:
+            self._stop_event = event
             self._display_report()
             self._capturing = False
         elif event.id is FreertosEvent.Id.DUMP_SYSTEM_STATE:
@@ -93,6 +97,17 @@ class TasksExecutionVisualizer:
             timepoint = to_datetime(message.ts, unit='us')
             gantt_fig.add_vline(x=timepoint, line_width=1, line_dash="dash", line_color="green")
             gantt_fig.add_annotation(x=timepoint, text=message.text)
+
+        # draw doundaries
+        startpoint = to_datetime(self._start_event.ts, unit='us')
+        gantt_fig.add_vline(x=startpoint, line_width=1, line_dash="dash", line_color="red")
+        annotation = 'start capturing'
+        if self._start_event.text: annotation = f'start {self._start_event.text} capturing'
+        gantt_fig.add_annotation(x=startpoint, text=annotation)
+
+        endtpoint = to_datetime(self._stop_event.ts, unit='us')
+        gantt_fig.add_vline(x=endtpoint, line_width=1, line_dash="dash", line_color="red")
+        gantt_fig.add_annotation(x=endtpoint, text="stop capturing")
 
         # save and show the report
         report = f"{self._out_dir}/{self._report_name}.html"
