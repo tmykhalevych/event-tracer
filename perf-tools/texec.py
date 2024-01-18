@@ -55,9 +55,9 @@ class TasksExecutionVisualizer:
         self._last_swithed_in = event
 
     def _display_report(self):
-        def extract_by(id: FreertosEvent.Id) -> list:
-            return [event for event in self._events if event.id is id]
+        extract_by = lambda id: [event for event in self._events if event.id is id]
 
+        # draw tasks execution periods
         task_events = extract_by(FreertosEvent.Id.TASK_SWITCHED_IN)
         for event in task_events:
             if event.task in self._task_names:
@@ -65,56 +65,60 @@ class TasksExecutionVisualizer:
             else:
                 event.text = f'Task #{event.task}'
 
-        task_create_events = extract_by(FreertosEvent.Id.TASK_CREATE)
-        task_delete_events = extract_by(FreertosEvent.Id.TASK_DELETE)
-        messages = extract_by(FreertosEvent.Id.USER_MESSAGE)
+        task_events_df = DataFrame(task_events)
+        task_events_df['end'] = to_datetime(task_events_df['ts'] + task_events_df['length'], unit='us')
+        task_events_df['ts'] = to_datetime(task_events_df['ts'], unit='us')
 
-        df = DataFrame(task_events)
-        df['end'] = to_datetime(df['ts'] + df['length'], unit='us')
-        df['ts'] = to_datetime(df['ts'], unit='us')
-
-        # draw tasks execution periods
-        gantt_fig = px.timeline(df,
+        main_fig = px.timeline(task_events_df,
                                 x_start='ts',
                                 x_end='end',
                                 y='text',
                                 color='prio',
                                 title='[perf-tools] Tasks execution sequence')
   
-        gantt_fig.update_layout(xaxis_title='Timeline [us]',
+        main_fig.update_layout(xaxis_title='Timeline [us]',
                                 yaxis_title='Task',
                                 coloraxis_colorbar=dict(title='Task priority'),
                                 showlegend=True)
 
-        gantt_fig.update_xaxes(dtick=100,
+        main_fig.update_xaxes(dtick=100,
                                tickformat='%H:%M:%S.%L',
                                minor=dict(dtick=10, griddash='dot'))
 
         # draw context swith points
-        scatter_fig = px.scatter(df, x='ts', y='text', color='prio', size_max=10)
-        gantt_fig.add_trace(scatter_fig.data[0])
+        ctx_switch_fig = px.scatter(task_events_df, x='ts', y='text', color='prio', size_max=10)
+        main_fig.add_trace(ctx_switch_fig.data[0])
+
+        # draw tasks lifetime events
+        task_lifetime_events = extract_by(FreertosEvent.Id.TASK_CREATE) + extract_by(FreertosEvent.Id.TASK_DELETE)
+        task_lt_events_df = DataFrame(task_lifetime_events)
+        task_lt_events_df['ts'] = to_datetime(task_lt_events_df['ts'], unit='us')
+        lifetimes_fig = px.scatter(task_lt_events_df, x='ts', y='text', size_max=10, color_discrete_sequence=['black'])
+
+        main_fig.add_trace(lifetimes_fig.data[0])
 
         # draw messages
+        messages = extract_by(FreertosEvent.Id.USER_MESSAGE)
         for message in messages:
             timepoint = to_datetime(message.ts, unit='us')
-            gantt_fig.add_vline(x=timepoint, line_width=1, line_dash='dash', line_color='green')
-            gantt_fig.add_annotation(x=timepoint, text=message.text)
+            main_fig.add_vline(x=timepoint, line_width=1, line_dash='dash', line_color='green')
+            main_fig.add_annotation(x=timepoint, text=message.text)
 
         # draw doundaries
         startpoint = to_datetime(self._start_event.ts, unit='us')
-        gantt_fig.add_vline(x=startpoint, line_width=1, line_dash='dash', line_color='red')
-        gantt_fig.add_annotation(x=startpoint, text=f'start capturing {self._start_event.text}'.strip())
+        main_fig.add_vline(x=startpoint, line_width=1, line_dash='dash', line_color='red')
+        main_fig.add_annotation(x=startpoint, text=f'start capturing {self._start_event.text}'.strip())
 
         endtpoint = to_datetime(self._stop_event.ts, unit='us')
-        gantt_fig.add_vline(x=endtpoint, line_width=1, line_dash='dash', line_color='red')
-        gantt_fig.add_annotation(x=endtpoint, text='stop capturing')
+        main_fig.add_vline(x=endtpoint, line_width=1, line_dash='dash', line_color='red')
+        main_fig.add_annotation(x=endtpoint, text='stop capturing')
 
         # save report
         name = self._report_info['name']
         time = self._report_info['time'].strftime('%d-%m-%Y__%H-%M-%S')
         report = f'{self._out_dir}/texec__{name}__{time}.html'
 
-        gantt_fig.write_html(report)
+        main_fig.write_html(report)
 
         # show report
         if self._show_report:
