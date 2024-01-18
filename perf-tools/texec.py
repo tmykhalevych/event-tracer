@@ -8,10 +8,11 @@ from pandas import DataFrame, to_datetime
 from event import Event as FreertosEvent
 
 class TasksExecutionVisualizer:
-    def __init__(self, out_dir: str = ".", preroll_ms: int = 100, postroll_ms: int = 100):
+    def __init__(self, out_dir: str = '.', preroll_ms: int = 100, postroll_ms: int = 100, show: bool = False):
         self._out_dir = out_dir
         self._preroll_ms = preroll_ms
         self._postroll_ms = postroll_ms
+        self._show_report = show
 
         self._events = []
         self._task_names = {}
@@ -62,7 +63,7 @@ class TasksExecutionVisualizer:
             if event.task in self._task_names:
                 event.text = self._task_names[event.task]
             else:
-                event.text = f"Task #{event.task}"
+                event.text = f'Task #{event.task}'
 
         task_create_events = extract_by(FreertosEvent.Id.TASK_CREATE)
         task_delete_events = extract_by(FreertosEvent.Id.TASK_DELETE)
@@ -96,33 +97,32 @@ class TasksExecutionVisualizer:
         # draw messages
         for message in messages:
             timepoint = to_datetime(message.ts, unit='us')
-            gantt_fig.add_vline(x=timepoint, line_width=1, line_dash="dash", line_color="green")
+            gantt_fig.add_vline(x=timepoint, line_width=1, line_dash='dash', line_color='green')
             gantt_fig.add_annotation(x=timepoint, text=message.text)
 
         # draw doundaries
         startpoint = to_datetime(self._start_event.ts, unit='us')
-        gantt_fig.add_vline(x=startpoint, line_width=1, line_dash="dash", line_color="red")
-        annotation = 'start capturing'
-        if self._start_event.text: annotation = f'start {self._start_event.text} capturing'
-        gantt_fig.add_annotation(x=startpoint, text=annotation)
+        gantt_fig.add_vline(x=startpoint, line_width=1, line_dash='dash', line_color='red')
+        gantt_fig.add_annotation(x=startpoint, text=f'start capturing {self._start_event.text}'.strip())
 
         endtpoint = to_datetime(self._stop_event.ts, unit='us')
-        gantt_fig.add_vline(x=endtpoint, line_width=1, line_dash="dash", line_color="red")
-        gantt_fig.add_annotation(x=endtpoint, text="stop capturing")
+        gantt_fig.add_vline(x=endtpoint, line_width=1, line_dash='dash', line_color='red')
+        gantt_fig.add_annotation(x=endtpoint, text='stop capturing')
 
         # save report
-        name = self._report_info["name"]
-        time = self._report_info["time"].strftime("%d-%m-%Y__%H-%M-%S")
+        name = self._report_info['name']
+        time = self._report_info['time'].strftime('%d-%m-%Y__%H-%M-%S')
         report = f'{self._out_dir}/texec__{name}__{time}.html'
 
         gantt_fig.write_html(report)
 
         # show report
-        webbrowser.open('file://' + report)
+        if self._show_report:
+            webbrowser.open('file://' + report)
 
 def main():
     app = TasksExecutionVisualizer()
     for line in sys.stdin.buffer.raw: app.process(FreertosEvent.parse(line))
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

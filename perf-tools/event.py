@@ -1,6 +1,5 @@
 import json
 
-from datetime import timedelta
 from dataclasses import dataclass, asdict
 from enum import Enum
 
@@ -35,26 +34,26 @@ class Event:
         except json.JSONDecodeError:
             return None
         
-        if not isinstance(data, dict) or not "event" in data:
+        if not isinstance(data, dict) or not 'event' in data:
             return None
 
         id = None
         try:
-            id = Event.Id(data["event"])
+            id = Event.Id(data['event'])
         except ValueError:
             return None
 
-        ts = data["ts"]
-        task = data["ctx"]["task"]
+        ts = data['ts']
+        task = data['ctx']['task']
 
         event = Event(ts, id, task)
 
-        info = data["ctx"]["info"]
-        if "prio" in info:
-            event.prio = info["prio"]
-        if "msg" in info:
-            event.text = info["msg"]
-        if "mark" in info:
-            event.mark = info["mark"]
+        info = data['ctx']['info']
+        if 'prio' in info:
+            event.prio = info['prio']
+        if 'msg' in info:
+            event.text = info['msg']
+        if 'mark' in info:
+            event.mark = info['mark']
 
         return event
