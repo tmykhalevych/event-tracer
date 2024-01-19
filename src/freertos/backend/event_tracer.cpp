@@ -10,15 +10,17 @@ namespace event_tracer::freertos
 
 static constexpr size_t MIN_REGISTRY_CAPACITY = 20;
 
-EventTracer::EventTracer(Span<std::byte> buff, data_ready_cb_t data_ready_cb, get_time_cb_t get_time_cb)
-    : m_data_ready_cb(data_ready_cb), m_get_time_cb(get_time_cb)
+EventTracer::EventTracer(Settings settings)
+    : m_data_ready_cb(std::move(settings.data_ready_cb))
+    , m_get_time_cb(std::move(settings.get_time_cb))
+    , m_string_pool_capacity(settings.message_pool_capacity)
 {
-    ET_ASSERT(buff);
-    ET_ASSERT(data_ready_cb);
-    ET_ASSERT(get_time_cb);
+    ET_ASSERT(settings.buff);
+    ET_ASSERT(settings.data_ready_cb);
+    ET_ASSERT(settings.get_time_cb);
 
-    const size_t registry_capacity = buff.size / sizeof(Event) / 2;
-    Event *registry_ptr = reinterpret_cast<Event *>(buff.data);
+    const size_t registry_capacity = settings.buff.size_bytes() / sizeof(Event) / 2;
+    Event *registry_ptr = reinterpret_cast<Event *>(settings.buff.data);
 
     ET_ASSERT(registry_capacity > 1);
     if (registry_capacity < MIN_REGISTRY_CAPACITY) {
@@ -69,7 +71,7 @@ void EventTracer::register_event(EventId id, std::optional<TaskHandle_t> task,
 }
 
 void EventTracer::register_user_event(UserEventId id, std::optional<std::string_view> message,
-                                      const TaskStatus_t* task_status)
+                                      const TaskStatus_t *task_status)
 {
     const auto ts = now();
 

@@ -31,10 +31,9 @@ namespace event_tracer::freertos
 Client::Client(Settings settings, data_ready_cb_t consumer)
     : m_consumer(std::move(consumer))
     , m_polling_interval_ms(settings.polling_interval_ms)
-    , m_max_task_num_expected(settings.max_task_num_expected)
+    , m_max_task_num_expected(settings.max_tasks_expected)
 {
-    m_system_state =
-        Span<TaskStatus_t>(reinterpret_cast<TaskStatus_t*>(settings.buff.data), m_max_task_num_expected);
+    m_system_state = Span<TaskStatus_t>(reinterpret_cast<TaskStatus_t *>(settings.buff.data), m_max_task_num_expected);
 
     ET_ASSERT(m_system_state.size_bytes() < settings.buff.size_bytes());
 
@@ -45,7 +44,11 @@ Client::Client(Settings settings, data_ready_cb_t consumer)
         produce_message(Message{.registry = &registry, .done_cb = std::move(done_cb)});
     };
 
-    SingleEventTracer::emplace(traces_buff, data_ready_handler, settings.get_timestamp_cb);
+    SingleEventTracer::emplace(EventTracer::Settings{.buff = traces_buff,
+                                                     .max_tasks_expected = settings.max_tasks_expected,
+                                                     .message_pool_capacity = settings.message_pool_capacity,
+                                                     .data_ready_cb = data_ready_handler,
+                                                     .get_time_cb = settings.get_timestamp_cb});
 
     m_queue_hdl = xQueueCreate(2 /* 2 items for alternated registries */, sizeof(Message));
     ET_ASSERT(m_queue_hdl);
@@ -135,10 +138,10 @@ void Client::dump_system_state()
 
     {
         std::scoped_lock lock(INTERRUPTS);
-        for (const auto& task_status : m_system_state) {
+        for (const auto &task_status : m_system_state) {
             if (task_status.pcTaskName) {
-                SingleEventTracer::instance()->register_user_event(
-                    UserEventId::DUMP_SYSTEM_STATE, task_status.pcTaskName, &task_status);
+                SingleEventTracer::instance()->register_user_event(UserEventId::DUMP_SYSTEM_STATE,
+                                                                   task_status.pcTaskName, &task_status);
             }
         }
     }

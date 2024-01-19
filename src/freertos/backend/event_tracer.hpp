@@ -11,6 +11,7 @@
 #include <inplace_function.hpp>
 #include <prohibit_copy_move.hpp>
 #include <singleton.hpp>
+#include <slab_allocator.hpp>
 #include <span.hpp>
 
 #include <FreeRTOS.h>
@@ -25,13 +26,22 @@ class EventTracer : public ProhibitCopyMove
 public:
     using get_time_cb_t = InplaceFunction<Event::timestamp_t()>;
 
-    EventTracer(Span<std::byte> buff, data_ready_cb_t data_ready_cb, get_time_cb_t get_time_cb);
+    struct Settings
+    {
+        Span<std::byte> buff;
+        uint max_tasks_expected;
+        uint message_pool_capacity;
+        data_ready_cb_t data_ready_cb;
+        get_time_cb_t get_time_cb;
+    };
+
+    EventTracer(Settings settings);
 
     void register_event(EventId id, std::optional<TaskHandle_t> task = std::nullopt,
                         std::optional<Event::timestamp_t> timestamp = std::nullopt);
 
     void register_user_event(UserEventId id, std::optional<std::string_view> message = std::nullopt,
-                             const TaskStatus_t* task_status = nullptr);
+                             const TaskStatus_t *task_status = nullptr);
 
     [[nodiscard]] Event::timestamp_t now() const { return m_get_time_cb(); }
 
@@ -50,6 +60,8 @@ private:
     get_time_cb_t m_get_time_cb;
 
     uint64_t m_first_ts;
+
+    const uint m_string_pool_capacity;
 };
 
 using SingleEventTracer = Singleton<EventTracer>;

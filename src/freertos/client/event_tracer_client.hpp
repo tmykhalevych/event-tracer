@@ -25,7 +25,9 @@ public:
     {
         Span<std::byte> buff;
         get_timestamp_cb_t get_timestamp_cb;
-        uint max_task_num_expected = 10;
+
+        uint max_tasks_expected = 10;
+        uint message_pool_capacity = 10;
         uint polling_interval_ms = 100;
 
         task_prio_t prio = configTIMER_TASK_PRIORITY - 1;

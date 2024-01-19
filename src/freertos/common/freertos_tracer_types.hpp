@@ -5,8 +5,9 @@
 #include <event_id.hpp>
 #include <event_registry.hpp>
 #include <inplace_function.hpp>
-#include <user_event_id.hpp>
+#include <message.hpp>
 #include <span.hpp>
+#include <user_event_id.hpp>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -36,7 +37,7 @@ static constexpr size_t MAX_EVENT_MESSAGE_LEN = tracerMAX_EVENT_MESSAGE_LEN;
 
 using task_id_t = tracerTASK_ID_TYPE;
 using task_prio_t = tracerTASK_PRIO_TYPE;
-using message_t = std::array<char, MAX_EVENT_MESSAGE_LEN>;
+using message_t = std::array<char, MAX_EVENT_MESSAGE_LEN>;  // Message<MAX_EVENT_MESSAGE_LEN>
 
 /// @brief Marker for the events came from non-FreeRTOS context
 enum class ContextMarker
