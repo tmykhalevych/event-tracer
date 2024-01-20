@@ -4,7 +4,7 @@
 #include <inplace_function.hpp>
 #include <prohibit_copy_move.hpp>
 #include <singleton.hpp>
-#include <span.hpp>
+#include <slice.hpp>
 #include <user_event_id.hpp>
 
 #include <FreeRTOS.h>
@@ -23,7 +23,7 @@ public:
 
     struct Settings
     {
-        Span<std::byte> buff;
+        Slice<std::byte> buff;
         get_timestamp_cb_t get_timestamp_cb;
 
         uint max_tasks_expected = 10;
@@ -56,11 +56,11 @@ private:
 
     QueueHandle_t m_queue_hdl = nullptr;
     TaskHandle_t m_task_hdl = nullptr;
-    Span<TaskStatus_t> m_system_state;
+    Slice<TaskStatus_t> m_system_state;
 
     const data_ready_cb_t m_consumer;
     const uint m_polling_interval_ms;
-    const uint m_max_task_num_expected;
+    const uint m_max_tasks_expected;
 };
 
 using SingleClient = Singleton<Client>;

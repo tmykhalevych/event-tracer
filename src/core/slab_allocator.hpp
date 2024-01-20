@@ -1,7 +1,7 @@
 #pragma once
 
 #include <assert.hpp>
-#include <span.hpp>
+#include <slice.hpp>
 
 namespace event_tracer
 {
@@ -12,7 +12,7 @@ namespace event_tracer
 class SlabAllocator
 {
 public:
-    SlabAllocator(Span<std::byte> storage, size_t slab_size) : m_begin(storage.data), m_slab_size(slab_size)
+    SlabAllocator(Slice<std::byte> storage, size_t slab_size) : m_begin(storage.data()), m_slab_size(slab_size)
     {
         ET_ASSERT(storage);
         ET_ASSERT(storage.size_bytes() >= slab_size);

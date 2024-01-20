@@ -31,14 +31,10 @@ namespace event_tracer::freertos
 Client::Client(Settings settings, data_ready_cb_t consumer)
     : m_consumer(std::move(consumer))
     , m_polling_interval_ms(settings.polling_interval_ms)
-    , m_max_task_num_expected(settings.max_tasks_expected)
+    , m_max_tasks_expected(settings.max_tasks_expected)
 {
-    m_system_state = Span<TaskStatus_t>(reinterpret_cast<TaskStatus_t *>(settings.buff.data), m_max_task_num_expected);
-
-    ET_ASSERT(m_system_state.size_bytes() < settings.buff.size_bytes());
-
-    const auto reserved_size = m_system_state.size_bytes();
-    const Span<std::byte> traces_buff(settings.buff.data + reserved_size, settings.buff.size - reserved_size);
+    Slice<std::byte> traces_buff;
+    std::tie(m_system_state, traces_buff) = settings.buff.cut<TaskStatus_t>(m_max_tasks_expected);
 
     const auto data_ready_handler = [this](EventRegistry &registry, data_done_cb_t done_cb) {
         produce_message(Message{.registry = &registry, .done_cb = std::move(done_cb)});
@@ -125,12 +121,12 @@ void Client::produce_message(Message &&msg)
 void Client::dump_system_state()
 {
     const auto task_num = uxTaskGetNumberOfTasks();
-    if (task_num > m_max_task_num_expected) {
+    if (task_num > m_max_tasks_expected) {
         ET_ERROR("Insufficient system state buffer");
         return;
     }
 
-    const auto status = uxTaskGetSystemState(m_system_state.data, m_system_state.size, nullptr);
+    const auto status = uxTaskGetSystemState(m_system_state.data(), m_system_state.size(), nullptr);
     if (status == pdFAIL) {
         ET_ERROR("Failed to get system state");
         return;

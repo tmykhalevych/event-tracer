@@ -46,7 +46,7 @@ int main()
     };
 
     freertos_tracer::SingleClient::emplace(
-        freertos_tracer::Client::Settings{.buff = event_tracer::Span(traces_buff.data(), traces_buff.size()),
+        freertos_tracer::Client::Settings{.buff = event_tracer::Slice(traces_buff.data(), traces_buff.size()),
                                           .get_timestamp_cb = std::move(get_steady_time)},
         std::move(consume_traces));
 

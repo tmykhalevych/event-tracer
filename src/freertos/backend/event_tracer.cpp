@@ -11,24 +11,26 @@ namespace event_tracer::freertos
 static constexpr size_t MIN_REGISTRY_CAPACITY = 20;
 
 EventTracer::EventTracer(Settings settings)
-    : m_data_ready_cb(std::move(settings.data_ready_cb))
-    , m_get_time_cb(std::move(settings.get_time_cb))
+    : m_data_ready_cb(settings.data_ready_cb)
+    , m_get_time_cb(settings.get_time_cb)
     , m_string_pool_capacity(settings.message_pool_capacity)
 {
     ET_ASSERT(settings.buff);
     ET_ASSERT(settings.data_ready_cb);
     ET_ASSERT(settings.get_time_cb);
 
-    const size_t registry_capacity = settings.buff.size_bytes() / sizeof(Event) / 2;
-    Event *registry_ptr = reinterpret_cast<Event *>(settings.buff.data);
+    Event *storage = reinterpret_cast<Event *>(settings.buff.data());
+    const size_t capacity = settings.buff.size_bytes() / sizeof(Event);
 
-    ET_ASSERT(registry_capacity > 1);
-    if (registry_capacity < MIN_REGISTRY_CAPACITY) {
+    ET_ASSERT(capacity > 1);
+    if (capacity < MIN_REGISTRY_CAPACITY) {
         ET_ERROR("Buffer size could be insufficient");
     }
 
-    m_active_registry = &m_registries[0].emplace(Span(registry_ptr, registry_capacity));
-    m_pending_registry = &m_registries[1].emplace(Span(registry_ptr + registry_capacity, registry_capacity));
+    auto [storage1, storage2] = Slice(storage, capacity).bifurcate();
+
+    m_active_registry = &m_registries[0].emplace(storage1);
+    m_pending_registry = &m_registries[1].emplace(storage2);
     m_first_ts = now();
 
     const auto ready_cb = [this](EventRegistry &registry) { on_registry_ready(registry); };

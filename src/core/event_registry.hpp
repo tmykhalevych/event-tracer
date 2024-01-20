@@ -5,7 +5,7 @@
 #include <event.hpp>
 #include <inplace_function.hpp>
 #include <prohibit_copy_move.hpp>
-#include <span.hpp>
+#include <slice.hpp>
 
 #include <cstdint>
 #include <optional>
@@ -23,7 +23,7 @@ public:
     using event_t = E;
     using ready_cb_t = InplaceFunction<void(EventRegistry<event_t>&)>;
 
-    explicit EventRegistry(Span<event_t> buff);
+    explicit EventRegistry(Slice<event_t> buff);
     ~EventRegistry();
 
     void add(event_t event);
@@ -55,7 +55,7 @@ private:
 };
 
 template <typename ED>
-EventRegistry<ED>::EventRegistry(Span<event_t> buff) : m_capacity(buff.size), m_begin(buff.data), m_next(m_begin)
+EventRegistry<ED>::EventRegistry(Slice<event_t> buff) : m_capacity(buff.size()), m_begin(buff.data()), m_next(m_begin)
 {
     ET_ASSERT(buff);
 }

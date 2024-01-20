@@ -6,7 +6,7 @@
 #include <event_registry.hpp>
 #include <inplace_function.hpp>
 #include <message.hpp>
-#include <span.hpp>
+#include <slice.hpp>
 #include <user_event_id.hpp>
 
 #include <FreeRTOS.h>
@@ -58,7 +58,7 @@ using EventRegistry = event_tracer::EventRegistry<Event>;
 using data_done_cb_t = InplaceFunction<void()>;
 using data_ready_cb_t = InplaceFunction<void(EventRegistry &, data_done_cb_t)>;
 
-using event_tracer::Span;
+using event_tracer::Slice;
 
 }  // namespace event_tracer::freertos
 

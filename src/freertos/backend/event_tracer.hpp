@@ -12,7 +12,7 @@
 #include <prohibit_copy_move.hpp>
 #include <singleton.hpp>
 #include <slab_allocator.hpp>
-#include <span.hpp>
+#include <slice.hpp>
 
 #include <FreeRTOS.h>
 #include <task.h>
@@ -28,7 +28,7 @@ public:
 
     struct Settings
     {
-        Span<std::byte> buff;
+        Slice<std::byte> buff;
         uint max_tasks_expected;
         uint message_pool_capacity;
         data_ready_cb_t data_ready_cb;
