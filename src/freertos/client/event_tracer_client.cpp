@@ -33,14 +33,14 @@ Client::Client(Settings settings, data_ready_cb_t consumer)
     , m_polling_interval_ms(settings.polling_interval_ms)
     , m_max_tasks_expected(settings.max_tasks_expected)
 {
-    Slice<std::byte> traces_buff;
-    std::tie(m_system_state, traces_buff) = settings.buff.cut<TaskStatus_t>(m_max_tasks_expected);
+    Slice<std::byte> tracer_buff;
+    std::tie(m_system_state, tracer_buff) = settings.buff.cut<TaskStatus_t>(m_max_tasks_expected);
 
     const auto data_ready_handler = [this](EventRegistry &registry, data_done_cb_t done_cb) {
         produce_message(Message{.registry = &registry, .done_cb = std::move(done_cb)});
     };
 
-    SingleEventTracer::emplace(EventTracer::Settings{.buff = traces_buff,
+    SingleEventTracer::emplace(EventTracer::Settings{.buff = tracer_buff,
                                                      .max_tasks_expected = settings.max_tasks_expected,
                                                      .message_pool_capacity = settings.message_pool_capacity,
                                                      .data_ready_cb = data_ready_handler,

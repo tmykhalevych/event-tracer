@@ -11,23 +11,23 @@ namespace event_tracer::freertos
 static constexpr size_t MIN_REGISTRY_CAPACITY = 20;
 
 EventTracer::EventTracer(Settings settings)
-    : m_data_ready_cb(settings.data_ready_cb)
-    , m_get_time_cb(settings.get_time_cb)
-    , m_string_pool_capacity(settings.message_pool_capacity)
+    : m_data_ready_cb(settings.data_ready_cb), m_get_time_cb(settings.get_time_cb)
 {
     ET_ASSERT(settings.buff);
-    ET_ASSERT(settings.data_ready_cb);
-    ET_ASSERT(settings.get_time_cb);
+    ET_ASSERT(m_data_ready_cb);
+    ET_ASSERT(m_get_time_cb);
 
-    Event *storage = reinterpret_cast<Event *>(settings.buff.data());
-    const size_t capacity = settings.buff.size_bytes() / sizeof(Event);
+    auto [message_pool, event_storage] = settings.buff.cut(settings.message_pool_capacity * MAX_EVENT_MESSAGE_LEN);
 
-    ET_ASSERT(capacity > 1);
-    if (capacity < MIN_REGISTRY_CAPACITY) {
+    m_message_alloc = SlabAllocator(message_pool, MAX_EVENT_MESSAGE_LEN);
+
+    auto [storage1, storage2] = event_storage.transform<Event>().bifurcate();
+
+    // we can only check the storage1 because storage2 is identical
+    ET_ASSERT(storage1);
+    if (storage1.size() < MIN_REGISTRY_CAPACITY) {
         ET_ERROR("Buffer size could be insufficient");
     }
-
-    auto [storage1, storage2] = Slice(storage, capacity).bifurcate();
 
     m_active_registry = &m_registries[0].emplace(storage1);
     m_pending_registry = &m_registries[1].emplace(storage2);

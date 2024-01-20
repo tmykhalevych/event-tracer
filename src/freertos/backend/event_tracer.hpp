@@ -61,7 +61,7 @@ private:
 
     uint64_t m_first_ts;
 
-    const uint m_string_pool_capacity;
+    SlabAllocator m_message_alloc;
 };
 
 using SingleEventTracer = Singleton<EventTracer>;

@@ -12,6 +12,8 @@ namespace event_tracer
 class SlabAllocator
 {
 public:
+    SlabAllocator() = default;
+
     SlabAllocator(Slice<std::byte> storage, size_t slab_size) : m_begin(storage.data()), m_slab_size(slab_size)
     {
         ET_ASSERT(storage);
@@ -35,6 +37,8 @@ public:
 
     void* allocate()
     {
+        ET_ASSERT(m_begin);
+
         if (!m_free_list) return nullptr;
 
         Ptr* next = reinterpret_cast<Ptr*>(*m_free_list);
@@ -46,6 +50,8 @@ public:
 
     void deallocate(void* slab)
     {
+        ET_ASSERT(m_begin);
+
         if (slab < m_begin || slab >= m_end) return;
 
         Ptr* last = m_free_list;
@@ -62,12 +68,11 @@ public:
 private:
     using Ptr = std::byte*;
 
-    Ptr m_begin;
-    Ptr m_end;
+    Ptr m_begin = nullptr;
+    Ptr m_end = nullptr;
 
-    Ptr* m_free_list;
-
-    const size_t m_slab_size;
+    Ptr* m_free_list = nullptr;
+    size_t m_slab_size = 0;
 };
 
 }  // namespace event_tracer
