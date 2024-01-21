@@ -7,8 +7,15 @@ from datetime import datetime
 from pandas import DataFrame, to_datetime
 from event import Event as FreertosEvent
 
+
 class TasksExecutionVisualizer:
-    def __init__(self, out_dir: str = '.', preroll_ms: int = 100, postroll_ms: int = 100, show: bool = False):
+    def __init__(
+        self,
+        out_dir: str = ".",
+        preroll_ms: int = 100,
+        postroll_ms: int = 100,
+        show: bool = False,
+    ):
         self._out_dir = out_dir
         self._preroll_ms = preroll_ms
         self._postroll_ms = postroll_ms
@@ -26,7 +33,7 @@ class TasksExecutionVisualizer:
     def process(self, event: FreertosEvent):
         if event is None:
             return
-        
+
         if event.id is FreertosEvent.Id.TASK_SWITCHED_IN:
             self._process_switched_in(event)
             return
@@ -63,70 +70,97 @@ class TasksExecutionVisualizer:
             if event.task in self._task_names:
                 event.text = self._task_names[event.task]
             else:
-                event.text = f'Task #{event.task}'
+                event.text = f"Task #{event.task}"
 
         task_events_df = DataFrame(task_events)
-        task_events_df['end'] = to_datetime(task_events_df['ts'] + task_events_df['length'], unit='us')
-        task_events_df['ts'] = to_datetime(task_events_df['ts'], unit='us')
+        task_events_df["end"] = to_datetime(
+            task_events_df["ts"] + task_events_df["length"], unit="us"
+        )
+        task_events_df["ts"] = to_datetime(task_events_df["ts"], unit="us")
 
-        main_fig = px.timeline(task_events_df,
-                                x_start='ts',
-                                x_end='end',
-                                y='text',
-                                color='prio',
-                                title='[perf-tools] Tasks execution sequence')
-  
-        main_fig.update_layout(xaxis_title='Timeline [us]',
-                                yaxis_title='Task',
-                                coloraxis_colorbar=dict(title='Task priority'),
-                                showlegend=True)
+        main_fig = px.timeline(
+            task_events_df,
+            x_start="ts",
+            x_end="end",
+            y="text",
+            color="prio",
+            title="[perf-tools] Tasks execution sequence",
+        )
 
-        main_fig.update_xaxes(dtick=100,
-                               tickformat='%H:%M:%S.%L',
-                               minor=dict(dtick=10, griddash='dot'))
+        main_fig.update_layout(
+            xaxis_title="Timeline [us]",
+            yaxis_title="Task",
+            coloraxis_colorbar=dict(title="Task priority"),
+            showlegend=True,
+        )
+
+        main_fig.update_xaxes(
+            dtick=100, tickformat="%H:%M:%S.%L", minor=dict(dtick=10, griddash="dot")
+        )
 
         # draw context swith points
-        ctx_switch_fig = px.scatter(task_events_df, x='ts', y='text', color='prio', size_max=10)
+        ctx_switch_fig = px.scatter(
+            task_events_df, x="ts", y="text", color="prio", size_max=10
+        )
         main_fig.add_trace(ctx_switch_fig.data[0])
 
         # draw tasks lifetime events
-        task_lifetime_events = extract_by(FreertosEvent.Id.TASK_CREATE) + extract_by(FreertosEvent.Id.TASK_DELETE)
+        task_lifetime_events = extract_by(FreertosEvent.Id.TASK_CREATE) + extract_by(
+            FreertosEvent.Id.TASK_DELETE
+        )
         task_lt_events_df = DataFrame(task_lifetime_events)
-        task_lt_events_df['ts'] = to_datetime(task_lt_events_df['ts'], unit='us')
-        lifetimes_fig = px.scatter(task_lt_events_df, x='ts', y='text', size_max=10, color_discrete_sequence=['black'])
+        task_lt_events_df["ts"] = to_datetime(task_lt_events_df["ts"], unit="us")
+        lifetimes_fig = px.scatter(
+            task_lt_events_df,
+            x="ts",
+            y="text",
+            size_max=10,
+            color_discrete_sequence=["black"],
+        )
 
         main_fig.add_trace(lifetimes_fig.data[0])
 
         # draw messages
         messages = extract_by(FreertosEvent.Id.USER_MESSAGE)
         for message in messages:
-            timepoint = to_datetime(message.ts, unit='us')
-            main_fig.add_vline(x=timepoint, line_width=1, line_dash='dash', line_color='green')
+            timepoint = to_datetime(message.ts, unit="us")
+            main_fig.add_vline(
+                x=timepoint, line_width=1, line_dash="dash", line_color="green"
+            )
             main_fig.add_annotation(x=timepoint, text=message.text)
 
         # draw doundaries
-        startpoint = to_datetime(self._start_event.ts, unit='us')
-        main_fig.add_vline(x=startpoint, line_width=1, line_dash='dash', line_color='red')
-        main_fig.add_annotation(x=startpoint, text=f'start capturing {self._start_event.text}'.strip())
+        startpoint = to_datetime(self._start_event.ts, unit="us")
+        main_fig.add_vline(
+            x=startpoint, line_width=1, line_dash="dash", line_color="red"
+        )
+        main_fig.add_annotation(
+            x=startpoint, text=f"start capturing {self._start_event.text}".strip()
+        )
 
-        endtpoint = to_datetime(self._stop_event.ts, unit='us')
-        main_fig.add_vline(x=endtpoint, line_width=1, line_dash='dash', line_color='red')
-        main_fig.add_annotation(x=endtpoint, text='stop capturing')
+        endtpoint = to_datetime(self._stop_event.ts, unit="us")
+        main_fig.add_vline(
+            x=endtpoint, line_width=1, line_dash="dash", line_color="red"
+        )
+        main_fig.add_annotation(x=endtpoint, text="stop capturing")
 
         # save report
-        name = self._report_info['name']
-        time = self._report_info['time'].strftime('%d-%m-%Y__%H-%M-%S')
-        report = f'{self._out_dir}/texec__{name}__{time}.html'
+        name = self._report_info["name"]
+        time = self._report_info["time"].strftime("%d-%m-%Y__%H-%M-%S")
+        report = f"{self._out_dir}/texec__{name}__{time}.html"
 
         main_fig.write_html(report)
 
         # show report
         if self._show_report:
-            webbrowser.open('file://' + report)
+            webbrowser.open("file://" + report)
+
 
 def main():
     app = TasksExecutionVisualizer()
-    for line in sys.stdin.buffer.raw: app.process(FreertosEvent.parse(line))
+    for line in sys.stdin.buffer.raw:
+        app.process(FreertosEvent.parse(line))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
