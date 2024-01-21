@@ -4,6 +4,5 @@ add_executable(core-test
     event_registry_test.cpp)
 
 target_link_libraries(core-test test-infra event-tracer-core)
-target_include_directories(core-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 mark_as_gtest(core-test)
