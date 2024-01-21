@@ -5,5 +5,5 @@ function(add_example EXAMPLE SOURCES)
   add_dependencies(examples ${EXAMPLE})
 endfunction()
 
-# add_subdirectory(basic)
+add_subdirectory(basic)
 add_subdirectory(freertos)

@@ -1,5 +1,8 @@
-#include <cinttypes>
 #include <event_registry.hpp>
+#include <slice.hpp>
+
+#include <array>
+#include <cinttypes>
 #include <iostream>
 
 struct TaskContext
@@ -12,7 +15,9 @@ using TaskEventDesc = event_tracer::Event<TaskContext>;
 
 int main()
 {
-    event_tracer::EventRegistry<TaskEventDesc> registry(4);
+    std::array<TaskEventDesc, 4> storage;
+
+    event_tracer::EventRegistry<TaskEventDesc> registry(event_tracer::Slice(storage.data(), storage.size()));
 
     registry.set_ready_cb([](auto& events) {
         std::cout << "Dumping events : ";
