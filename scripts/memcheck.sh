@@ -6,7 +6,7 @@ build_dir="$script_dir/../build"
 out_dir="$build_dir/memcheck"
 
 target="$current_dir/$1"
-test_duration_sec=10
+test_duration_sec=60
 
 mkdir -p "$out_dir"
 cd $out_dir
