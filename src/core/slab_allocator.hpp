@@ -1,6 +1,8 @@
 #pragma once
 
 #include <assert.hpp>
+#include <error.hpp>
+#include <prohibit_copy_move.hpp>
 #include <slice.hpp>
 
 namespace event_tracer
@@ -9,10 +11,10 @@ namespace event_tracer
 /// @brief Simple slab allocator with a free list for storage management.
 /// @note Follows rapid allocation but slow deallocation strategy. Uses no additional memory except user-provided.
 ///       The minimum slab size cannot be smaller than a size of a pointer by design.
-class SlabAllocator
+class SlabAllocator : public ProhibitCopy
 {
 public:
-    SlabAllocator() = default;
+    using Ptr = std::byte*;
 
     SlabAllocator(Slice<std::byte> storage, size_t slab_size) : m_begin(storage.data()), m_slab_size(slab_size)
     {
@@ -22,7 +24,7 @@ public:
 
         const size_t slabs = storage.size_bytes() / slab_size;
         m_end = m_begin + (slabs * slab_size);
-        m_free_list = &m_begin;
+        m_free_list = m_begin;
 
         Ptr prev = m_begin;
         Ptr next = m_begin + slab_size;
@@ -35,43 +37,48 @@ public:
         *reinterpret_cast<Ptr*>(prev) = nullptr;
     }
 
-    void* allocate()
+    Ptr allocate()
     {
         ET_ASSERT(m_begin);
 
         if (!m_free_list) return nullptr;
 
-        Ptr* next = reinterpret_cast<Ptr*>(*m_free_list);
-        Ptr free = *m_free_list;
+        Ptr next = *reinterpret_cast<Ptr*>(m_free_list);
+        Ptr free = m_free_list;
         m_free_list = next;
 
         return free;
     }
 
-    void deallocate(void* slab)
+    void deallocate(Ptr free)
     {
         ET_ASSERT(m_begin);
+        ET_ASSERT(free >= m_begin || free <= m_end);
 
-        if (slab < m_begin || slab >= m_end) return;
-
-        Ptr* last = m_free_list;
-        while (*last != nullptr) {
-            last = reinterpret_cast<Ptr*>(*last);
+        if (!m_free_list) {
+            m_free_list = free;
+            *reinterpret_cast<Ptr*>(free) = nullptr;
+            return;
         }
 
-        *last = static_cast<Ptr>(slab);
-        *reinterpret_cast<Ptr*>(last) = nullptr;
+        Ptr prev = nullptr;
+        Ptr last = m_free_list;
+        while (last) {
+            prev = last;
+            last = *reinterpret_cast<Ptr*>(last);
+        }
+
+        *reinterpret_cast<Ptr*>(prev) = free;
+        *reinterpret_cast<Ptr*>(free) = nullptr;
     }
 
     [[nodiscard]] size_t get_slab_size() const { return m_slab_size; }
 
 private:
-    using Ptr = std::byte*;
-
     Ptr m_begin = nullptr;
     Ptr m_end = nullptr;
+    Ptr m_free_list = nullptr;
 
-    Ptr* m_free_list = nullptr;
     size_t m_slab_size = 0;
 };
 

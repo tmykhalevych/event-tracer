@@ -2,6 +2,7 @@
 #include <error.hpp>
 #include <event_tracer.hpp>
 #include <scope_guard.hpp>
+#include <variant_helpers.hpp>
 
 #include <cstring>
 
@@ -19,7 +20,7 @@ EventTracer::EventTracer(Settings settings)
 
     auto [message_pool, event_storage] = settings.buff.cut(settings.message_pool_capacity * MAX_EVENT_MESSAGE_LEN);
 
-    m_message_alloc = SlabAllocator(message_pool, MAX_EVENT_MESSAGE_LEN);
+    m_message_alloc.emplace(message_pool, MAX_EVENT_MESSAGE_LEN);
 
     auto [storage1, storage2] = event_storage.transform<Event>().bifurcate();
 
@@ -51,7 +52,7 @@ void EventTracer::register_event(EventId id, std::optional<TaskHandle_t> task,
 
     // if there is no current task control block, it means that it is a global context, and no task yet exists
     if (!tcb) {
-        event.ctx.info = ContextMarker::GLOBAL;
+        event.ctx.info = ContextMarker::GLOBAL_SCOPE;
         return;
     }
 
@@ -61,10 +62,8 @@ void EventTracer::register_event(EventId id, std::optional<TaskHandle_t> task,
     event.ctx.task_id = task_info.xTaskNumber;
 
     // add task name to task lifetime events
-    if (needs_message(id)) {
-        message_t msg{'\0'};
-        std::strncpy(msg.data(), task_info.pcTaskName, msg.max_size() - 1);
-        event.ctx.info = msg;
+    if (id == EventId::TASK_CREATE || id == EventId::TASK_DELETE) {
+        add_message(event, task_info.pcTaskName);
         return;
     }
 
@@ -87,13 +86,10 @@ void EventTracer::register_user_event(UserEventId id, std::optional<std::string_
     }
 
     Event event{.ts = ts, .id = to_underlying(id), .ctx = {.task_id = task_info.xTaskNumber}};
-    message_t msg{'\0'};
 
     if (message) {
-        std::strncpy(msg.data(), message->data(), msg.max_size() - 1);
+        add_message(event, message.value());
     }
-
-    event.ctx.info = msg;
 
     m_active_registry->add(std::move(event));
 }
@@ -101,16 +97,29 @@ void EventTracer::register_user_event(UserEventId id, std::optional<std::string_
 void EventTracer::notify_done(EventRegistry &registry)
 {
     ET_ASSERT(&registry != m_active_registry);
+
+    for (const auto &event : registry) {
+        release_message_for(event);
+    }
+
     registry.reset();
 }
 
-constexpr bool EventTracer::needs_message(EventId id)
+void EventTracer::add_message(Event &event, std::string_view src)
 {
-    switch (id) {
-        case EventId::TASK_CREATE:
-        case EventId::TASK_DELETE: return true;
-        default: return false;
+    auto msg = message_t::create(src, *m_message_alloc);
+    if (msg) {
+        event.ctx.info = msg.value();
     }
+    else {
+        event.ctx.info = ContextMarker::MESSAGE_LOST;
+    }
+}
+
+void EventTracer::release_message_for(const Event &event)
+{
+    std::visit(Alternatives{[this](message_t msg) { message_t::destroy(msg, *m_message_alloc); }, Alternative::ignore},
+               event.ctx.info);
 }
 
 void EventTracer::on_registry_ready(EventRegistry &registry)

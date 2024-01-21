@@ -37,12 +37,13 @@ static constexpr size_t MAX_EVENT_MESSAGE_LEN = tracerMAX_EVENT_MESSAGE_LEN;
 
 using task_id_t = tracerTASK_ID_TYPE;
 using task_prio_t = tracerTASK_PRIO_TYPE;
-using message_t = std::array<char, MAX_EVENT_MESSAGE_LEN>;  // Message<MAX_EVENT_MESSAGE_LEN>
+using message_t = Message<MAX_EVENT_MESSAGE_LEN>;
 
-/// @brief Marker for the events came from non-FreeRTOS context
+/// @brief Marker for the events to indicate unusual cases
 enum class ContextMarker
 {
-    GLOBAL
+    GLOBAL_SCOPE = 0,
+    MESSAGE_LOST
 };
 
 /// @brief Context of FreeRTOS event

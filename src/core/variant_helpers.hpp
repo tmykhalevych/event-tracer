@@ -5,6 +5,11 @@
 namespace event_tracer
 {
 
+struct Alternative
+{
+    static constexpr auto ignore = [](auto) {};
+};
+
 template <class... Ts>
 struct Alternatives : Ts...
 {

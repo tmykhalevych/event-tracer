@@ -166,7 +166,7 @@ std::string_view format(const Event &e, bool newline)
 
     std::visit(
         Alternatives{[&](task_prio_t prio) { std::snprintf(ctx_str, CTX_INFO_STR_SIZE, CTX_PRIO_STR, prio); },
-                     [&](const message_t &msg) { std::snprintf(ctx_str, CTX_INFO_STR_SIZE, CTX_MSG_STR, msg.data()); },
+                     [&](const message_t &msg) { std::snprintf(ctx_str, CTX_INFO_STR_SIZE, CTX_MSG_STR, msg.c_str()); },
                      [&](ContextMarker m) { std::snprintf(ctx_str, CTX_INFO_STR_SIZE, CTX_MRK_STR, m); }},
         e.ctx.info);
 

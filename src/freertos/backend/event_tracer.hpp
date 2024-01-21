@@ -49,7 +49,8 @@ private:
     void on_registry_ready(EventRegistry &registry);
     void notify_done(EventRegistry &registry);
 
-    constexpr bool needs_message(EventId id);
+    void add_message(Event &event, std::string_view src);
+    void release_message_for(const Event &event);
 
     EventRegistry *m_active_registry;
     EventRegistry *m_pending_registry;
@@ -61,7 +62,7 @@ private:
 
     uint64_t m_first_ts;
 
-    SlabAllocator m_message_alloc;
+    std::optional<SlabAllocator> m_message_alloc;
 };
 
 using SingleEventTracer = Singleton<EventTracer>;

@@ -22,19 +22,23 @@ public:
     {
         ET_ASSERT(Capacity <= alloc.get_slab_size());
 
-        char* storage = alloc.allocate();
-        if (!storage) return std::nullopt;
+        char* dst = reinterpret_cast<char*>(alloc.allocate());
+        if (!dst) return std::nullopt;
 
-        std::strncpy(storage, src.data(), Capacity);
-        return Message{.m_data = storage};
+        std::strncpy(dst, src.data(), Capacity);
+        return Message(dst);
     }
 
-    static void destroy(Message msg, SlabAllocator& alloc) { alloc.deallocate(msg.m_data); }
+    static void destroy(const Message& msg, SlabAllocator& alloc)
+    {
+        auto* data = reinterpret_cast<SlabAllocator::Ptr>(msg.m_data);
+        alloc.deallocate(data);
+    }
 
     [[nodiscard]] char* c_str() const { return m_data; }
 
 private:
-    Message() = default;
+    explicit Message(char* underlying) : m_data(underlying) {}
 
     char* m_data;
 };
