@@ -6,14 +6,14 @@ namespace
 static bool g_assert = false;
 static bool g_error = false;
 
-} // namespace
+}  // namespace
 
-extern "C" void event_tracer_assert(const char* const pcFileName, unsigned long ulLine)
+void event_tracer_assert(const char* const pcFileName, unsigned long ulLine)
 {
     g_assert = true;
 }
 
-extern "C" void event_tracer_error(const char* const pcErrorMsg)
+void event_tracer_error(const char* const pcErrorMsg)
 {
     g_error = true;
 }
@@ -37,4 +37,4 @@ void reset_error_assert()
     g_assert = false;
 }
 
-} // namespace impl
+}  // namespace impl
