@@ -41,7 +41,10 @@ public:
     {
         ET_ASSERT(m_begin);
 
-        if (!m_free_list) return nullptr;
+        if (!m_free_list) {
+            ET_ERROR("Cannot allocate on pool");
+            return nullptr;
+        }
 
         Ptr next = *reinterpret_cast<Ptr*>(m_free_list);
         Ptr free = m_free_list;

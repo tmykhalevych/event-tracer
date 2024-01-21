@@ -18,21 +18,21 @@ template <size_t Capacity>
 class Message
 {
 public:
-    static std::optional<Message> create(std::string_view src, SlabAllocator& alloc)
+    static std::optional<Message> create(std::string_view src, SlabAllocator& msg_pool)
     {
-        ET_ASSERT(Capacity <= alloc.get_slab_size());
+        ET_ASSERT(Capacity <= msg_pool.get_slab_size());
 
-        char* dst = reinterpret_cast<char*>(alloc.allocate());
+        char* dst = reinterpret_cast<char*>(msg_pool.allocate());
         if (!dst) return std::nullopt;
 
         std::strncpy(dst, src.data(), Capacity);
         return Message(dst);
     }
 
-    static void destroy(const Message& msg, SlabAllocator& alloc)
+    static void destroy(const Message& msg, SlabAllocator& msg_pool)
     {
         auto* data = reinterpret_cast<SlabAllocator::Ptr>(msg.m_data);
-        alloc.deallocate(data);
+        msg_pool.deallocate(data);
     }
 
     [[nodiscard]] char* c_str() const { return m_data; }

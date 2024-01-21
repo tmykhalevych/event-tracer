@@ -47,7 +47,8 @@ int main()
 
     freertos_tracer::SingleClient::emplace(
         freertos_tracer::Client::Settings{.buff = event_tracer::Slice(traces_buff.data(), traces_buff.size()),
-                                          .get_timestamp_cb = std::move(get_steady_time)},
+                                          .get_timestamp_cb = std::move(get_steady_time),
+                                          .message_pool_capacity = 30},
         std::move(consume_traces));
 
     const auto task = [](void *) {
