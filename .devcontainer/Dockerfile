@@ -5,7 +5,7 @@ ENV TZ=Etc/UTC
 USER root
 
 RUN apt-get update
-RUN apt-get install -y build-essential curl zsh git wget cmake clang-format doxygen gdb libgtest-dev graphviz
+RUN apt-get install -y build-essential curl zsh git wget cmake clang-format doxygen gdb libgtest-dev graphviz valgrind
 
 RUN cd /usr/src/googletest && \
     cmake . && \
