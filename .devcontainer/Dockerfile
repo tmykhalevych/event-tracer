@@ -5,7 +5,7 @@ ENV TZ=Etc/UTC
 USER root
 
 RUN apt-get update
-RUN apt-get install -y build-essential curl zsh git wget cmake clang-format doxygen gdb libgtest-dev
+RUN apt-get install -y build-essential curl zsh git wget cmake clang-format doxygen gdb libgtest-dev graphviz
 
 RUN cd /usr/src/googletest && \
     cmake . && \
@@ -18,4 +18,4 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 RUN apt install -y python3 python3-venv
 RUN python3 -m venv "/root/.venv"
 ENV PATH="${PATH}:/root/.venv/bin"
-RUN pip install pre-commit plotly pandas
+RUN pip install pre-commit plotly pandas gprof2dot

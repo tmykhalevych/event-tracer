@@ -6,6 +6,7 @@
 #include <array>
 #include <cassert>
 #include <chrono>
+#include <csignal>
 #include <cstdarg>
 #include <iostream>
 #include <random>
@@ -31,6 +32,9 @@ void post_message_in(std::chrono::seconds duration, std::string msg);
 
 int main()
 {
+    // successful exit is needed for gprof to generate gmon.out file
+    signal(SIGINT, [](int) { exit(EXIT_SUCCESS); });
+
     std::array<std::byte, TRACES_BUFF_LEN> traces_buff;
 
     auto get_steady_time = []() -> uint64_t {
