@@ -59,7 +59,7 @@ void EventTracer::register_event(EventId id, std::optional<TaskHandle_t> task,
     TaskStatus_t task_info;
     vTaskGetInfo(tcb, &task_info, pdFALSE, eInvalid);
 
-    event.ctx.task_id = task_info.xTaskNumber;
+    event.ctx.task_id = static_cast<task_id_t>(task_info.xTaskNumber);
 
     // add task name to task lifetime events
     if (id == EventId::TASK_CREATE || id == EventId::TASK_DELETE) {
@@ -68,7 +68,7 @@ void EventTracer::register_event(EventId id, std::optional<TaskHandle_t> task,
     }
 
     // for all other events, add dedicated task priority to events
-    event.ctx.info = task_prio_t{task_info.uxCurrentPriority};
+    event.ctx.info = static_cast<task_prio_t>(task_info.uxCurrentPriority);
 }
 
 void EventTracer::register_user_event(UserEventId id, std::optional<std::string_view> message,
@@ -85,7 +85,7 @@ void EventTracer::register_user_event(UserEventId id, std::optional<std::string_
         vTaskGetInfo(tcb, &task_info, pdFALSE, eInvalid);
     }
 
-    Event event{.ts = ts, .id = to_underlying(id), .ctx = {.task_id = task_info.xTaskNumber}};
+    Event event{.ts = ts, .id = to_underlying(id), .ctx = {.task_id = static_cast<task_id_t>(task_info.xTaskNumber)}};
 
     if (message) {
         add_message(event, message.value());

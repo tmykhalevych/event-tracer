@@ -22,8 +22,8 @@ public:
         ET_ASSERT(storage.size_bytes() >= slab_size);
         ET_ASSERT(slab_size >= sizeof(Ptr));
 
-        const size_t slabs = storage.size_bytes() / slab_size;
-        m_end = m_begin + (slabs * slab_size);
+        m_capacity = storage.size_bytes() / slab_size;
+        m_end = m_begin + (m_capacity * slab_size);
         m_free_list = m_begin;
 
         Ptr prev = m_begin;
@@ -75,7 +75,9 @@ public:
         *reinterpret_cast<Ptr*>(free) = nullptr;
     }
 
-    [[nodiscard]] size_t get_slab_size() const { return m_slab_size; }
+    [[nodiscard]] size_t slab_size() const { return m_slab_size; }
+    [[nodiscard]] size_t capacity() const { return m_capacity; }
+    [[nodiscard]] Ptr const data() const { return m_begin; }
 
 private:
     Ptr m_begin = nullptr;
@@ -83,6 +85,7 @@ private:
     Ptr m_free_list = nullptr;
 
     size_t m_slab_size = 0;
+    size_t m_capacity = 0;
 };
 
 }  // namespace event_tracer

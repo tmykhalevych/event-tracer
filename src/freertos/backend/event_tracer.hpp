@@ -44,6 +44,7 @@ public:
                              const TaskStatus_t *task_status = nullptr);
 
     [[nodiscard]] Event::timestamp_t now() const { return m_get_time_cb(); }
+    [[nodiscard]] SlabAllocator &access_message_alloc() { return m_message_alloc.value(); }
 
 private:
     void on_registry_ready(EventRegistry &registry);

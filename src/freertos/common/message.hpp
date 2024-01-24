@@ -4,43 +4,58 @@
 #include <slab_allocator.hpp>
 
 #include <cstring>
+#include <limits>
 #include <optional>
 #include <string_view>
 
 namespace event_tracer::freertos
 {
 
-/// @brief Simple wrapper on C-string. Allows user to create/destroy C-string using SlabAllocator.
+/// @brief Allows user to create, destroy and access C-string using SlabAllocator.
+///        Stores index of a slab, where message is located.
 /// @tparam Capacity Expected maxim message length (including '\0')
 /// @warning Message is not owning the buffer. This is made to keep Message size as small as possible and not store
-///          a pointer to allocator. Please DO NOT FORGET to destroy the message. RAII is not followed by design.
+///          a pointer to allocator and/or even C-string. Please DO NOT FORGET to destroy the message.
+///          RAII is not followed by design.
 template <size_t Capacity>
 class Message
 {
 public:
     static std::optional<Message> create(std::string_view src, SlabAllocator& msg_pool)
     {
-        ET_ASSERT(Capacity <= msg_pool.get_slab_size());
+        ET_ASSERT(Capacity <= msg_pool.slab_size());
+        ET_ASSERT(msg_pool.capacity() <= std::numeric_limits<index_t>::max());
 
-        char* dst = reinterpret_cast<char*>(msg_pool.allocate());
-        if (!dst) return std::nullopt;
+        SlabAllocator::Ptr free = msg_pool.allocate();
+        if (!free) {
+            return std::nullopt;
+        }
 
-        std::strncpy(dst, src.data(), Capacity);
-        return Message(dst);
+        std::strncpy(reinterpret_cast<char*>(free), src.data(), Capacity);
+
+        return Message(std::distance(msg_pool.data(), free) / msg_pool.slab_size());
     }
 
     static void destroy(const Message& msg, SlabAllocator& msg_pool)
     {
-        auto* data = reinterpret_cast<SlabAllocator::Ptr>(msg.m_data);
-        msg_pool.deallocate(data);
+        ET_ASSERT(msg_pool.capacity() >= msg.m_data_index);
+
+        msg_pool.deallocate(msg_pool.data() + msg.m_data_index * msg_pool.slab_size());
     }
 
-    [[nodiscard]] char* c_str() const { return m_data; }
+    [[nodiscard]] char* get(SlabAllocator& msg_pool) const
+    {
+        ET_ASSERT(msg_pool.capacity() >= m_data_index);
+
+        return reinterpret_cast<char*>(msg_pool.data() + m_data_index * msg_pool.slab_size());
+    }
 
 private:
-    explicit Message(char* underlying) : m_data(underlying) {}
+    using index_t = uint8_t;
 
-    char* m_data;
+    explicit Message(index_t index) : m_data_index(index) {}
+
+    index_t m_data_index;
 };
 
 }  // namespace event_tracer::freertos

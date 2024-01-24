@@ -189,11 +189,20 @@ std::string_view format(const Event &e, bool newline)
         [&](task_prio_t prio) {
             std::snprintf(ctx_str, CTX_STR_SIZE, NUM_CTX_STR, ContextInfoId<task_prio_t>::value, prio);
         },
-        [&](const message_t &msg) {
-            std::snprintf(ctx_str, CTX_STR_SIZE, MSG_CTX_STR, ContextInfoId<message_t>::value, msg.c_str());
+        [&](message_t msg) {
+            char* message = nullptr;
+            {
+                std::scoped_lock lock(INTERRUPTS);
+
+                EventTracerPtr tracer = SingleEventTracer::instance();
+                ET_ASSERT(tracer);
+
+                message = msg.get(tracer->access_message_alloc());
+            }
+            std::snprintf(ctx_str, CTX_STR_SIZE, MSG_CTX_STR, ContextInfoId<message_t>::value, message);
         },
-        [&](ContextMarker m) {
-            std::snprintf(ctx_str, CTX_STR_SIZE, NUM_CTX_STR, ContextInfoId<ContextMarker>::value, m);
+        [&](ContextMarker mark) {
+            std::snprintf(ctx_str, CTX_STR_SIZE, NUM_CTX_STR, ContextInfoId<ContextMarker>::value, mark);
         }}, e.ctx.info);
 
     std::snprintf(event_str, EVENT_STR_SIZE, EVENT_STR, e.ts, e.id, e.ctx.task_id, ctx_str, newline ? "\n" : "");
