@@ -19,7 +19,7 @@ static constexpr auto MAX_TASK_PRIORITY = configTIMER_TASK_PRIORITY - 2;
 static const auto MIN_TASK_STACK_SIZE = configMINIMAL_STACK_SIZE;
 
 static constexpr std::pair<int, int> TASK_SLEEP_RANGE_MS = {100, 500};
-static constexpr auto TASK_NUM = 5;
+static constexpr auto TASK_NUM = 30;
 static constexpr auto TASK_NAME_BASE = "task #";
 
 static constexpr auto TRACES_BUFF_LEN = 0x2800;  // 10K
@@ -52,7 +52,8 @@ int main()
     freertos_tracer::SingleClient::emplace(
         freertos_tracer::Client::Settings{.buff = event_tracer::Slice(traces_buff.data(), traces_buff.size()),
                                           .get_timestamp_cb = std::move(get_steady_time),
-                                          .message_pool_capacity = 30},
+                                          .max_tasks_expected = 32,
+                                          .message_pool_capacity = 65},
         std::move(consume_traces));
 
     const auto task = [](void *) {
@@ -75,7 +76,7 @@ int main()
         xTaskCreate(task, task_name.c_str(), MIN_TASK_STACK_SIZE, nullptr, MAX_TASK_PRIORITY, nullptr);
     }
 
-    start_event_capturing_for(3s);
+    start_event_capturing_for(20s);
     post_message_in(1s, "message");
 
     vTaskStartScheduler();
