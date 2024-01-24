@@ -1,4 +1,4 @@
-import json
+import re
 
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -6,6 +6,9 @@ from enum import Enum
 
 @dataclass
 class Event:
+    # event format: [ts|event_id|task|info_id:info]
+    PATTERN = r"\[([0-9]*)\|([0-9]*)\|([0-9]*)\|([0-9]*)\:(.*)\]"
+
     class Id(Enum):
         DUMP_SYSTEM_STATE = 1
         USER_START_CAPTURING = 2
@@ -14,6 +17,12 @@ class Event:
         TASK_CREATE = 7
         TASK_DELETE = 11
         TASK_SWITCHED_IN = 26
+
+    class InfoId(Enum):
+        UNDEFINED = 0
+        TASK_PRIO = 1
+        MESSAGE = 2
+        MARKER = 3
 
     ts: int
     id: Id
@@ -28,33 +37,39 @@ class Event:
     def __str__(self) -> str:
         return str(asdict(self))
 
-    def parse(input: str) -> "Event":
-        data = None
-        try:
-            data = json.loads(input)
-        except json.JSONDecodeError:
+    def parse(input: bytes) -> "Event":
+        res = re.search(Event.PATTERN, str(input).strip())
+
+        if not res:
             return None
 
-        if not isinstance(data, dict) or not "event" in data:
-            return None
-
-        id = None
+        id = int(res.group(2))
         try:
-            id = Event.Id(data["event"])
+            id = Event.Id(id)
         except ValueError:
             return None
 
-        ts = data["ts"]
-        task = data["ctx"]["task"]
+        info_id = int(res.group(4))
+        try:
+            info_id = Event.InfoId(info_id)
+        except ValueError:
+            return None
+
+        ts = int(res.group(1))
+        task = int(res.group(3))
 
         event = Event(ts, id, task)
 
-        info = data["ctx"]["info"]
-        if "prio" in info:
-            event.prio = info["prio"]
-        if "msg" in info:
-            event.text = info["msg"]
-        if "mark" in info:
-            event.mark = info["mark"]
+        if info_id is Event.InfoId.UNDEFINED:
+            return event
+
+        info = res.group(5)
+
+        if info_id is Event.InfoId.TASK_PRIO:
+            event.prio = int(info)
+        if info_id is Event.InfoId.MESSAGE:
+            event.text = str(info)
+        if info_id is Event.InfoId.MARKER:
+            event.mark = int(info)
 
         return event

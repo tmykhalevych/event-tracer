@@ -66,7 +66,7 @@ private:
 using SingleClient = Singleton<Client>;
 using ClientPtr = SingleClient::Ptr;
 
-/// @brief Event string formatter
+/// @brief Event string formatter, converts event into "[ts|event_id|task|info_id:info]"
 /// @param event Event to format
 /// @param newline Indicator for adding newline character at the end of string
 /// @return Formatted event as a string_view
