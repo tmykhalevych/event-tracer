@@ -8,6 +8,7 @@
 #include <slice.hpp>
 
 #include <cstdint>
+#include <iterator>
 #include <optional>
 
 namespace event_tracer
@@ -33,6 +34,7 @@ public:
     const event_t* end() const { return m_next; }
 
     [[nodiscard]] bool empty() const { return m_next == m_begin; }
+    [[nodiscard]] size_t size() const { return std::distance(m_begin, m_next); }
 
     template <typename F>
     void set_ready_cb(F handler)
