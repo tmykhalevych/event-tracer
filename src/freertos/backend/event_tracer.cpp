@@ -94,6 +94,11 @@ void EventTracer::register_user_event(UserEventId id, std::optional<std::string_
     m_active_registry->add(std::move(event));
 }
 
+std::string_view EventTracer::access_message_data(message_t msg)
+{
+    return msg.get(*m_message_alloc);
+}
+
 void EventTracer::notify_done(EventRegistry &registry)
 {
     ET_ASSERT(&registry != m_active_registry);
