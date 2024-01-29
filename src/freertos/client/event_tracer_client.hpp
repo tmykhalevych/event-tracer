@@ -11,6 +11,8 @@
 #include <queue.h>
 #include <task.h>
 
+#include <optional>
+
 namespace event_tracer::freertos
 {
 
@@ -21,18 +23,25 @@ class Client : public ProhibitCopyMove
 public:
     using get_timestamp_cb_t = InplaceFunction<uint64_t()>;
 
+    struct ThreadSettings
+    {
+        task_prio_t prio = configTIMER_TASK_PRIORITY - 1;
+        uint stack_size = configMINIMAL_STACK_SIZE;
+        const char* name = "perf-tools";
+        uint polling_interval_ms = 100;
+    };
+
     struct Settings
     {
         Slice<std::byte> buff;
         get_timestamp_cb_t get_timestamp_cb;
 
         uint max_tasks_expected = 10;
-        uint message_pool_capacity = 10;
-        uint polling_interval_ms = 100;
+        uint message_pool_capacity = 15;
 
-        task_prio_t prio = configTIMER_TASK_PRIORITY - 1;
-        uint stack_size = configMINIMAL_STACK_SIZE;
-        const char* name = "perf-tools";
+        static constexpr auto THREADLESS = std::nullopt;
+
+        std::optional<ThreadSettings> thread = ThreadSettings{};
     };
 
     Client(Settings settings, data_ready_cb_t consumer);
@@ -43,6 +52,11 @@ public:
     /// @param message [optional] Message associated with an event
     void emit(UserEventId event, std::optional<std::string_view> message = std::nullopt);
 
+    /// @brief Iterates through worker tasks, if client is created thread-less
+    /// @note Useful if client is used together with external async engine/scheduler (e.g. Asio)
+    /// @warning Asserts if client is thread-ful
+    void iterate();
+
 private:
     struct Message
     {
@@ -50,17 +64,21 @@ private:
         data_done_cb_t done_cb;
     };
 
+    void iterate_impl();
+
     void client_task();
     void produce_message(Message&& msg);
     void dump_system_state();
 
     QueueHandle_t m_queue_hdl = nullptr;
-    TaskHandle_t m_task_hdl = nullptr;
     Slice<TaskStatus_t> m_system_state;
 
+    TaskHandle_t m_task_hdl = nullptr;
+    uint m_polling_interval_ms = 0;
+
     const data_ready_cb_t m_consumer;
-    const uint m_polling_interval_ms;
     const uint m_max_tasks_expected;
+    const bool m_threadless;
 };
 
 using SingleClient = Singleton<Client>;

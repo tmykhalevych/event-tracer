@@ -30,8 +30,8 @@ namespace event_tracer::freertos
 
 Client::Client(Settings settings, data_ready_cb_t consumer)
     : m_consumer(std::move(consumer))
-    , m_polling_interval_ms(settings.polling_interval_ms)
     , m_max_tasks_expected(settings.max_tasks_expected)
+    , m_threadless(settings.thread == Settings::THREADLESS)
 {
     Slice<std::byte> tracer_buff;
     std::tie(m_system_state, tracer_buff) = settings.buff.cut<TaskStatus_t>(m_max_tasks_expected);
@@ -49,7 +49,12 @@ Client::Client(Settings settings, data_ready_cb_t consumer)
     m_queue_hdl = xQueueCreate(2 /* 2 items for alternated registries */, sizeof(Message));
     ET_ASSERT(m_queue_hdl);
 
-    xTaskCreate(Bound<&Client::client_task>, settings.name, settings.stack_size, this, settings.prio, &m_task_hdl);
+    if (!m_threadless) {
+        auto &thread_settings = settings.thread.value();
+        m_polling_interval_ms = thread_settings.polling_interval_ms;
+        xTaskCreate(Bound<&Client::client_task>, thread_settings.name, thread_settings.stack_size, this,
+                    thread_settings.prio, &m_task_hdl);
+    }
 }
 
 Client::~Client()
@@ -83,17 +88,29 @@ void Client::emit(UserEventId event, std::optional<std::string_view> message)
     }
 }
 
-void Client::client_task()
+void Client::iterate()
+{
+    ET_ASSERT(m_threadless);
+    iterate_impl();
+}
+
+void Client::iterate_impl()
 {
     Message msg;
 
+    ET_ASSERT(m_queue_hdl);
+    while (xQueueReceive(m_queue_hdl, &msg, 0 /* don't block */) == pdPASS) {
+        ET_ASSERT(msg.registry);
+        ET_ASSERT(msg.done_cb);
+        m_consumer(*msg.registry, msg.done_cb);
+    }
+}
+
+void Client::client_task()
+{
+    ET_ASSERT(!m_threadless);
     while (true) {
-        ET_ASSERT(m_queue_hdl);
-        while (xQueueReceive(m_queue_hdl, &msg, 0 /* don't block */) == pdPASS) {
-            ET_ASSERT(msg.registry);
-            ET_ASSERT(msg.done_cb);
-            m_consumer(*msg.registry, msg.done_cb);
-        }
+        iterate_impl();
         vTaskDelay(m_polling_interval_ms / portTICK_PERIOD_MS);
     }
 }
