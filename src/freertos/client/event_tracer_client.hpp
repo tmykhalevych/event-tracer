@@ -65,8 +65,8 @@ private:
     };
 
     void iterate_impl();
-
     void client_task();
+
     void produce_message(Message&& msg);
     void dump_system_state();
 

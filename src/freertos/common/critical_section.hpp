@@ -9,6 +9,7 @@ namespace event_tracer::freertos
 {
 
 /// @brief ISR critical section
+/// @note Nesting is handled by FreeRTOS port implementation
 class IsrPreemtion
 {
 public:
@@ -18,17 +19,12 @@ public:
     void lock() { m_saved_interrupt_status = taskENTER_CRITICAL_FROM_ISR(); }
     void unlock() { taskEXIT_CRITICAL_FROM_ISR(m_saved_interrupt_status); }
 
-    bool try_lock()
-    {
-        lock();
-        return true;
-    }
-
 private:
     UBaseType_t m_saved_interrupt_status;
 };
 
 /// @brief Task critical section
+/// @note Nesting is handled by FreeRTOS port implementation
 class Interrupts
 {
 public:
@@ -37,12 +33,6 @@ public:
 
     void lock() { taskENTER_CRITICAL(); }
     void unlock() { taskEXIT_CRITICAL(); }
-
-    bool try_lock()
-    {
-        lock();
-        return true;
-    }
 };
 
 static inline IsrPreemtion ISR_PREEMPTION{};
