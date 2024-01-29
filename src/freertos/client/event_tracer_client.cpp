@@ -172,36 +172,40 @@ template <> struct ContextInfoId<task_prio_t>   { static constexpr ctx_info_id_t
 template <> struct ContextInfoId<message_t>     { static constexpr ctx_info_id_t value = 2; }; // message
 template <> struct ContextInfoId<ContextMarker> { static constexpr ctx_info_id_t value = 3; }; // context mark
 
+static char EVENT_STR[] = "[%" PRIu64 "|%" PRIu8 "|%" PRIu64 "|%s]%c"; // [ts|event_id|task|info_id:info]end
+static char MSG_CTX_STR[] = "%" PRIu8 ":%s";
+static char NUM_CTX_STR[] = "%" PRIu8 ":%" PRIu64;
+
+static constexpr auto CTX_STR_SIZE = std::max<size_t>({
+    /* task prio */ std::numeric_limits<task_prio_t>::digits10,
+    /* message   */ MAX_EVENT_MESSAGE_LEN,
+    /* marker    */ std::numeric_limits<ContextMarker>::digits10}) +
+    /* info id   */ std::numeric_limits<ctx_info_id_t>::digits10 +
+                    std::max({
+                        sizeof(MSG_CTX_STR),
+                        sizeof(NUM_CTX_STR)});
+
+static constexpr auto EVENT_STR_SIZE = std::numeric_limits<uint64_t>::digits10 +
+                                        std::numeric_limits<uint8_t>::digits10 +
+                                        std::numeric_limits<uint64_t>::digits10 +
+                                        std::numeric_limits<uint8_t>::digits10 +
+                                        CTX_STR_SIZE +
+                                        sizeof(EVENT_STR) +
+                                        2; // end + '\0'
+
+static char ctx_str[CTX_STR_SIZE];
+
 }  // namespace
 
-std::string_view format(const Event &e, bool newline)
+std::string_view format(const Event &e, char end)
 {
-    // event format: [ts|event_id|task|info_id:info]
-
-    static char EVENT_STR[] = "[%" PRIu64 "|%" PRIu8 "|%" PRIu64 "|%s]%s";
-    static char MSG_CTX_STR[] = "%" PRIu8 ":%s";
-    static char NUM_CTX_STR[] = "%" PRIu8 ":%" PRIu64;
-
-    static constexpr auto CTX_STR_SIZE = std::max<size_t>({
-        /* task prio */ std::numeric_limits<task_prio_t>::digits10,
-        /* message   */ MAX_EVENT_MESSAGE_LEN,
-        /* marker    */ std::numeric_limits<ContextMarker>::digits10}) +
-        /* info id   */ std::numeric_limits<ctx_info_id_t>::digits10 +
-                        std::max({
-                            sizeof(MSG_CTX_STR),
-                            sizeof(NUM_CTX_STR)});
-
-    static constexpr auto EVENT_STR_SIZE = std::numeric_limits<uint64_t>::digits10 +
-                                           std::numeric_limits<uint8_t>::digits10 +
-                                           std::numeric_limits<uint64_t>::digits10 +
-                                           std::numeric_limits<uint8_t>::digits10 +
-                                           CTX_STR_SIZE +
-                                           sizeof(EVENT_STR) +
-                                           sizeof("\n");
-
     static char event_str[EVENT_STR_SIZE];
-    static char ctx_str[CTX_STR_SIZE];
+    format(event_str, e, end);
+    return event_str;
+}
 
+int format(char* dst, const Event& e, char end)
+{
     std::visit(Alternatives{
         [&](task_prio_t prio) {
             std::snprintf(ctx_str, CTX_STR_SIZE, NUM_CTX_STR, ContextInfoId<task_prio_t>::value, prio);
@@ -222,8 +226,7 @@ std::string_view format(const Event &e, bool newline)
             std::snprintf(ctx_str, CTX_STR_SIZE, NUM_CTX_STR, ContextInfoId<ContextMarker>::value, mark);
         }}, e.ctx.info);
 
-    std::snprintf(event_str, EVENT_STR_SIZE, EVENT_STR, e.ts, e.id, e.ctx.task_id, ctx_str, newline ? "\n" : "");
-    return event_str;
+    return std::snprintf(dst, EVENT_STR_SIZE, EVENT_STR, e.ts, e.id, e.ctx.task_id, ctx_str, end);
 }
 
 // clang-format on

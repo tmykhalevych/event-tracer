@@ -84,10 +84,19 @@ private:
 using SingleClient = Singleton<Client>;
 using ClientPtr = SingleClient::Ptr;
 
-/// @brief Event string formatter, converts event into "[ts|event_id|task|info_id:info]"
-/// @param event Event to format
-/// @param newline Indicator for adding newline character at the end of string
+/// @brief Event string formatter, converts event into "[ts|event_id|task|info_id:info]end"
+/// @param e Event to format
+/// @param end Last character, could be used to add newline or specific end value
 /// @return Formatted event as a string_view
-[[nodiscard]] std::string_view format(const Event& e, bool newline = true);
+/// @warning Not MT-safe
+[[nodiscard]] std::string_view format(const Event& e, char end = '\n');
+
+/// @brief Event string formatter, converts event into "[ts|event_id|task|info_id:info]end"
+/// @param dst Destination C-string
+/// @param e Event to format
+/// @param end Last character, could be used to add newline or specific end value
+/// @return The number of characters written to destination or negative error code
+/// @warning Not MT-safe
+int format(char* dst, const Event& e, char end = '\n');
 
 }  // namespace event_tracer::freertos
