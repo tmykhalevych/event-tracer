@@ -211,22 +211,29 @@ int format(char* dst, const Event& e, char end)
             std::snprintf(ctx_str, CTX_STR_SIZE, NUM_CTX_STR, ContextInfoId<task_prio_t>::value, prio);
         },
         [&](message_t msg) {
-            std::string_view message;
-            {
-                std::scoped_lock lock(INTERRUPTS);
-
-                EventTracerPtr tracer = SingleEventTracer::instance();
-                ET_ASSERT(tracer);
-
-                message = tracer->access_message_data(msg);
-            }
-            std::snprintf(ctx_str, CTX_STR_SIZE, MSG_CTX_STR, ContextInfoId<message_t>::value, message.data());
+            std::snprintf(ctx_str, CTX_STR_SIZE, MSG_CTX_STR, ContextInfoId<message_t>::value, retrieve(msg).data());
         },
         [&](ContextMarker mark) {
             std::snprintf(ctx_str, CTX_STR_SIZE, NUM_CTX_STR, ContextInfoId<ContextMarker>::value, mark);
         }}, e.ctx.info);
 
     return std::snprintf(dst, EVENT_STR_SIZE, EVENT_STR, e.ts, e.id, e.ctx.task_id, ctx_str, end);
+}
+
+std::string_view retrieve(message_t msg)
+{
+    std::string_view message;
+
+    {
+        std::scoped_lock lock(INTERRUPTS);
+
+        EventTracerPtr tracer = SingleEventTracer::instance();
+        ET_ASSERT(tracer);
+
+        message = tracer->access_message_data(msg);
+    }
+
+    return message;
 }
 
 // clang-format on

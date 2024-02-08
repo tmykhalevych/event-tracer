@@ -99,4 +99,8 @@ using ClientPtr = SingleClient::Ptr;
 /// @warning Not MT-safe
 int format(char* dst, const Event& e, char end = '\n');
 
+/// @brief Retrieves the message from tracer backend message pool
+/// @return The view on pool-allocated message
+[[nodiscard]] std::string_view retrieve(message_t msg);
+
 }  // namespace event_tracer::freertos
