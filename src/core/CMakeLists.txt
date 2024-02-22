@@ -1,19 +1,19 @@
-set(TRACER_ASSERT_DEFINITION "default" CACHE STRING "Use user defined assert hook for Event Tracer")
-set(TRACER_ERROR_DEFINITION "default" CACHE STRING "Use user defined error hook for Event Tracer")
+set(ET_ASSERT_DEFINITION "default" CACHE STRING "Use user defined target with assert hook for Event Tracer")
+set(ET_ERROR_DEFINITION  "default" CACHE STRING "Use user defined target with error hook for Event Tracer")
 
-message("Event Tracer options:")
-message("- TRACER_ASSERT_DEFINITION: \"${TRACER_ASSERT_DEFINITION}\"")
-message("- TRACER_ERROR_DEFINITION: \"${TRACER_ERROR_DEFINITION}\"")
+message(STATUS "Event Tracer external definitions:")
+message(STATUS "  ET_ASSERT_DEFINITION: ${ET_ASSERT_DEFINITION}")
+message(STATUS "  ET_ERROR_DEFINITION:  ${ET_ERROR_DEFINITION}")
 
 add_library(event-tracer-core INTERFACE)
 target_include_directories(event-tracer-core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-if(NOT ${TRACER_ASSERT_DEFINITION} STREQUAL "default")
+if(NOT ${ET_ASSERT_DEFINITION} STREQUAL "default")
   target_compile_definitions(event-tracer-core INTERFACE tracerUSE_ASSERT_HOOK)
-  target_link_libraries(event-tracer-core INTERFACE ${TRACER_ASSERT_DEFINITION})
+  target_link_libraries(event-tracer-core INTERFACE ${ET_ASSERT_DEFINITION})
 endif()
 
-if(NOT ${TRACER_ERROR_DEFINITION} STREQUAL "default")
+if(NOT ${ET_ERROR_DEFINITION} STREQUAL "default")
   target_compile_definitions(event-tracer-core INTERFACE tracerUSE_ERROR_HOOK)
-  target_link_libraries(event-tracer-core INTERFACE ${TRACER_ERROR_DEFINITION})
+  target_link_libraries(event-tracer-core INTERFACE ${ET_ERROR_DEFINITION})
 endif()

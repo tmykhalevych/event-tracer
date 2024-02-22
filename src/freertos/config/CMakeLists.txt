@@ -1,23 +1,23 @@
-option(TASK_TRACES   "Use task traces"             OFF)
-option(TASK_PERF     "Use task profiling utility"  OFF)
-option(ALLOC_TRACES  "Use allocation traces"       OFF)
+option(ET_TASK_TRACES   "Enable task traces"             OFF)
+option(ET_TASK_PROF     "Enable task profiling utility"  OFF)
+option(ET_ALLOC_TRACES  "Enable allocation traces"       OFF)
 
-message("FreeRTOS Tracer options:")
-message("- TASK_TRACES   ${TASK_TRACES}")
-message("- TASK_PERF     ${TASK_PERF}")
-message("- ALLOC_TRACES  ${ALLOC_TRACES}")
+message(STATUS "FreeRTOS Event Tracer features:")
+message(STATUS "  ET_TASK_TRACES:   ${ET_TASK_TRACES}")
+message(STATUS "  ET_TASK_PROF:     ${ET_TASK_PROF}")
+message(STATUS "  ET_ALLOC_TRACES:  ${ET_ALLOC_TRACES}")
 
 set(FREERTOS_TRACES_COMPILE_DEFINITIONS "")
 
-if(TASK_TRACES)
+if(ET_TASK_TRACES)
   list(APPEND FREERTOS_TRACES_COMPILE_DEFINITIONS tracerUSE_TASK_TRACES)
 endif()
 
-if(TASK_PERF)
-  list(APPEND FREERTOS_TRACES_COMPILE_DEFINITIONS tracerUSE_TASK_PERF)
+if(ET_TASK_PROF)
+  list(APPEND FREERTOS_TRACES_COMPILE_DEFINITIONS tracerUSE_TASK_PROF)
 endif()
 
-if(ALLOC_TRACES)
+if(ET_ALLOC_TRACES)
   list(APPEND FREERTOS_TRACES_COMPILE_DEFINITIONS tracerUSE_ALLOC_TRACES)
 endif()
 

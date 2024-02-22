@@ -12,7 +12,7 @@
 #define traceTASK_SWITCHED_IN() ISR_trace_task_switched_in(pxCurrentTCB)
 #endif
 
-#ifdef tracerUSE_TASK_PERF
+#ifdef tracerUSE_TASK_PROF
 #define traceTASK_INCREMENT_TICK(tick_count) ISR_trace_system_tick((size_t)tick_count)
 #endif
 

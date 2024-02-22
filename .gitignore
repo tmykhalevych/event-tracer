@@ -8,3 +8,4 @@ FreeRTOS*/
 
 __pycache__/
 *.html
+/.venv
