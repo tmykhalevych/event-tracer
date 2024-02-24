@@ -6,12 +6,12 @@ namespace event_tracer
 {
 
 /// @brief Singleton helper. Support construction with params and accesing
-/// @tparam TTarget Target type
-template <typename TTarget>
+/// @tparam T Target type
+template <typename T>
 class Singleton
 {
 public:
-    using Ptr = TTarget*;
+    using Ptr = T*;
 
     template <typename... TArgs>
     static void emplace(TArgs&&... args)
@@ -24,7 +24,7 @@ public:
     static void reset() { m_instance.reset(); }
 
 private:
-    inline static std::optional<TTarget> m_instance = std::nullopt;
+    inline static std::optional<T> m_instance = std::nullopt;
 };
 
 }  // namespace event_tracer

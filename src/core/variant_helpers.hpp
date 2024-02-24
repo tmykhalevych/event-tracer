@@ -10,13 +10,13 @@ struct Alternative
     static constexpr auto ignore = [](auto) {};
 };
 
-template <class... Ts>
-struct Alternatives : Ts...
+template <class... A>
+struct Alternatives : A...
 {
-    using Ts::operator()...;
+    using A::operator()...;
 };
 
-template <class... Ts>
-Alternatives(Ts...) -> Alternatives<Ts...>;
+template <class... A>
+Alternatives(A...) -> Alternatives<A...>;
 
 }  // namespace event_tracer

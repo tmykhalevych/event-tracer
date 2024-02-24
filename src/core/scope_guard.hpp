@@ -9,14 +9,14 @@ namespace event_tracer
 {
 
 /// @brief Basic scope guard. Invokes final action when out of scope. Doesn't invoke when canceled.
-/// @tparam TFinalAction Invocable final action type
-template <typename TFinalAction>
+/// @tparam FA Invocable final action type
+template <typename FA>
 class ScopeGuard : public ProhibitCopyMove
 {
 public:
     ScopeGuard() = delete;
 
-    explicit ScopeGuard(TFinalAction action) : m_action(std::move(action)) {}
+    explicit ScopeGuard(FA action) : m_action(std::move(action)) {}
     ~ScopeGuard()
     {
         if (m_action) std::invoke(*m_action);
@@ -25,7 +25,7 @@ public:
     void cancel() { m_action.reset(); }
 
 private:
-    std::optional<TFinalAction> m_action;
+    std::optional<FA> m_action;
 };
 
 }  // namespace event_tracer

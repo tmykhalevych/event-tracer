@@ -13,17 +13,17 @@ namespace event_tracer::freertos
 
 /// @brief Allows user to create, destroy and access C-string using SlabAllocator.
 ///        Stores index of a slab, where message is located.
-/// @tparam Capacity Expected maxim message length (including '\0')
+/// @tparam C Expected maxim message length (including '\0')
 /// @warning Message is not owning the buffer. This is made to keep Message size as small as possible and not store
 ///          a pointer to allocator and/or even C-string. Please DO NOT FORGET to destroy the message.
 ///          RAII is not followed by design.
-template <size_t Capacity>
+template <unsigned C>
 class Message
 {
 public:
     static std::optional<Message> create(std::string_view src, SlabAllocator& msg_pool)
     {
-        ET_ASSERT(Capacity <= msg_pool.slab_size());
+        ET_ASSERT(C <= msg_pool.slab_size());
         ET_ASSERT(msg_pool.capacity() <= std::numeric_limits<index_t>::max());
 
         SlabAllocator::Ptr free = msg_pool.allocate();
@@ -31,7 +31,7 @@ public:
             return std::nullopt;
         }
 
-        std::strncpy(reinterpret_cast<char*>(free), src.data(), Capacity);
+        std::strncpy(reinterpret_cast<char*>(free), src.data(), C);
 
         return Message(std::distance(msg_pool.data(), free) / msg_pool.slab_size());
     }

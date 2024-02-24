@@ -64,6 +64,7 @@ using EventRegistry = event_tracer::EventRegistry<Event>;
 using data_done_cb_t = InplaceFunction<void()>;
 using data_ready_cb_t = InplaceFunction<void(EventRegistry &, data_done_cb_t)>;
 
+using event_tracer::as_slice;
 using event_tracer::Slice;
 
 }  // namespace event_tracer::freertos

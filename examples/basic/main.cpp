@@ -7,7 +7,7 @@
 
 using Event = event_tracer::Event<>;
 using Registry = event_tracer::EventRegistry<Event>;
-using event_tracer::Slice;
+using event_tracer::as_slice;
 
 int main()
 {
