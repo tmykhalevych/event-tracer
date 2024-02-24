@@ -1,5 +1,6 @@
 #include <FreeRTOS.h>
 #include <task.h>
+#include <timers.h>
 
 #include <event_tracer_client.hpp>
 
@@ -13,22 +14,21 @@
 #include <string_view>
 #include <utility>
 
-#include "timers.h"
-
-static constexpr auto MAX_TASK_PRIORITY = configTIMER_TASK_PRIORITY - 2;
-static const auto MIN_TASK_STACK_SIZE = configMINIMAL_STACK_SIZE;
-
-static constexpr std::pair<int, int> TASK_SLEEP_RANGE_MS = {100, 500};
+// clang-format off
+static constexpr auto TASK_PRIO = configTIMER_TASK_PRIORITY - 2;
+static const     auto TASK_STACK_SIZE = configMINIMAL_STACK_SIZE;
 static constexpr auto TASK_NUM = 30;
 static constexpr auto TASK_NAME_BASE = "task #";
-
+static constexpr auto TASK_SLEEP_RANGE_MS = std::make_pair(100, 500);
 static constexpr auto TRACES_BUFF_LEN = 0x2800;  // 10K
-
-namespace freertos_tracer = event_tracer::freertos;
-using namespace std::chrono_literals;
+// clang-format on
 
 void start_event_capturing_for(std::chrono::seconds duration);
 void post_message_in(std::chrono::seconds duration, std::string msg);
+// FreeRTOS hooks
+extern "C" void vApplicationMallocFailedHook();
+extern "C" void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName);
+extern "C" void vAssertCalled(const char *const pcFileName, unsigned long ulLine);
 
 int main()
 {
@@ -44,7 +44,7 @@ int main()
 
     auto consume_traces = [](freertos_tracer::EventRegistry &registry, freertos_tracer::data_done_cb_t done_cb) {
         for (const auto &event : registry) {
-            std::printf(freertos_tracer::format(event).data());
+            std::cout << freertos_tracer::format(event, '\n');
         }
         done_cb();
     };
@@ -65,16 +65,18 @@ int main()
         const auto task_sleep_ms = sleep_dist(rng);
         while (true) {
             auto *buff = pvPortMalloc(1000);
-            std::cout << pcTaskGetName(nullptr) << std::endl;
+            std::cout << pcTaskGetName(nullptr) << '\n';
             vPortFree(buff);
-            vTaskDelay(task_sleep_ms / portTICK_PERIOD_MS);
+            vTaskDelay(pdMS_TO_TICKS(task_sleep_ms));
         }
     };
 
     for (int i = 1; i <= TASK_NUM; ++i) {
         const auto task_name = std::string(TASK_NAME_BASE) + std::to_string(i);
-        xTaskCreate(task, task_name.c_str(), MIN_TASK_STACK_SIZE, nullptr, MAX_TASK_PRIORITY, nullptr);
+        xTaskCreate(task, task_name.c_str(), TASK_STACK_SIZE, nullptr, TASK_PRIO, nullptr);
     }
+
+    using namespace std::chrono_literals;
 
     start_event_capturing_for(20s);
     post_message_in(1s, "message");
@@ -111,29 +113,20 @@ void post_message_in(std::chrono::seconds duration, std::string msg)
     xTimerStart(capturing_timer, 0);
 }
 
-extern "C" void vLoggingPrintf(const char *pcFormatString, ...)
-{
-    va_list args;
-    va_start(args, pcFormatString);
-    vprintf(pcFormatString, args);
-    printf("\n");
-    va_end(args);
-}
-
 extern "C" void vApplicationMallocFailedHook()
 {
-    std::cout << "malloc failed" << std::endl;
+    std::cerr << "malloc failed" << std::endl;
     assert(false);
 }
 
 extern "C" void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    std::cout << "stack overflow, task: \"" << std::string_view(pcTaskName) << "\"" << std::endl;
+    std::cerr << "stack overflow, task: \"" << std::string_view(pcTaskName) << "\"" << std::endl;
     assert(false);
 }
 
 extern "C" void vAssertCalled(const char *const pcFileName, unsigned long ulLine)
 {
-    std::cout << "assert at " << std::string_view(pcFileName) << ":" << ulLine << std::endl;
+    std::cerr << "assert at " << std::string_view(pcFileName) << ":" << ulLine << std::endl;
     assert(false);
 }

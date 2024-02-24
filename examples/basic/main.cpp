@@ -5,30 +5,26 @@
 #include <cinttypes>
 #include <iostream>
 
-struct TaskContext
-{
-    uint8_t id;
-    uint8_t prio;
-};
-
-using TaskEventDesc = event_tracer::Event<TaskContext>;
+using Event = event_tracer::Event<>;
+using Registry = event_tracer::EventRegistry<Event>;
+using event_tracer::Slice;
 
 int main()
 {
-    std::array<TaskEventDesc, 4> storage;
+    std::array<Event, 4> storage;
+    Registry registry(Slice(storage.data(), storage.size()));
 
-    event_tracer::EventRegistry<TaskEventDesc> registry(event_tracer::Slice(storage.data(), storage.size()));
-
-    registry.set_ready_cb([](auto& events) {
+    registry.set_ready_cb([&registry](auto& events) {
         std::cout << "Dumping events : ";
-
-        for (auto& event : events) std::cout << std::to_string(event.id);
-
-        std::cout << std::endl;
+        for (auto& event : events) {
+            std::cout << std::to_string(event.id);
+        }
+        std::cout << '\n';
+        registry.reset();
     });
 
     for (uint8_t i = 0; i < 10; ++i) {
-        registry.add({.id = i});
+        registry.add({.ts = i, .id = i});
     }
 
     return 0;

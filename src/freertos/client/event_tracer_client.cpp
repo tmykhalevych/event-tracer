@@ -97,7 +97,6 @@ void Client::iterate()
 void Client::iterate_impl()
 {
     Message msg;
-
     ET_ASSERT(m_queue_hdl);
     while (xQueueReceive(m_queue_hdl, &msg, 0 /* don't block */) == pdPASS) {
         ET_ASSERT(msg.registry);
@@ -111,7 +110,7 @@ void Client::client_task()
     ET_ASSERT(!m_threadless);
     while (true) {
         iterate_impl();
-        vTaskDelay(m_polling_interval_ms / portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(m_polling_interval_ms));
     }
 }
 
