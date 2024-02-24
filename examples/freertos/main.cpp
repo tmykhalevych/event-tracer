@@ -50,7 +50,7 @@ int main()
     };
 
     freertos_tracer::SingleClient::emplace(
-        freertos_tracer::Client::Settings{.buff = event_tracer::Slice(traces_buff.data(), traces_buff.size()),
+        freertos_tracer::Client::Settings{.buff = event_tracer::as_slice(traces_buff),
                                           .get_timestamp_cb = std::move(get_steady_time),
                                           .max_tasks_expected = 32,
                                           .message_pool_capacity = 65},

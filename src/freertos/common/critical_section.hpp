@@ -13,9 +13,6 @@ namespace event_tracer::freertos
 class IsrPreemtion
 {
 public:
-    IsrPreemtion() = default;
-    ~IsrPreemtion() = default;
-
     void lock() { m_saved_interrupt_status = taskENTER_CRITICAL_FROM_ISR(); }
     void unlock() { taskEXIT_CRITICAL_FROM_ISR(m_saved_interrupt_status); }
 
@@ -28,9 +25,6 @@ private:
 class Interrupts
 {
 public:
-    Interrupts() = default;
-    ~Interrupts() = default;
-
     void lock() { taskENTER_CRITICAL(); }
     void unlock() { taskEXIT_CRITICAL(); }
 };

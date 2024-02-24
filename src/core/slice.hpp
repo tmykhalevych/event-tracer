@@ -15,8 +15,6 @@ struct Slice
     Slice() = default;
     Slice(T* data, size_t size) : m_data(data), m_size(size) {}
 
-    ~Slice() = default;
-
     /// @brief Cut the chunk from a beginning of a slice
     /// @tparam C Cut chunk content type. Same as for original slice, by default.
     /// @param size A size of a chunk to cut
@@ -69,5 +67,15 @@ private:
     T* m_data = nullptr;
     size_t m_size = 0;
 };
+
+/// @brief Helper function to get a slice from standard containers
+/// @tparam T Container type (deductible)
+/// @param src Conteiner reference
+/// @return Slice og a given container
+template <typename T>
+inline auto as_slice(T& src)
+{
+    return Slice(src.data(), src.size());
+}
 
 }  // namespace event_tracer

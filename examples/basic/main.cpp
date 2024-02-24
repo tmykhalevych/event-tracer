@@ -11,8 +11,8 @@ using event_tracer::Slice;
 
 int main()
 {
-    std::array<Event, 4> storage;
-    Registry registry(Slice(storage.data(), storage.size()));
+    std::vector<Event> storage(4);
+    Registry registry(as_slice(storage));
 
     registry.set_ready_cb([&registry](auto& events) {
         std::cout << "Dumping events : ";
